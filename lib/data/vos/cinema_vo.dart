@@ -21,10 +21,14 @@ class CinemaVO {
   @HiveField(2)
   List<TimeslotsVO>? timeslots;
 
+  @HiveField(3)
+  List<String>? dates;
+
   CinemaVO({
     this.cinemaId,
     this.cinema,
     this.timeslots,
+    this.dates
   });
 
   void makeAllTimeslotsChangeNotSelected() {

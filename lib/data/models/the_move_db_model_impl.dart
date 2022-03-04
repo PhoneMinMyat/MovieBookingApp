@@ -51,10 +51,9 @@ class TheMovieDbModelImpl implements TheMovieDbModel {
   }
 
   @override
-  Future<List<ActorVO>?> getCreditsByMovie(int movieId) {
-    return _mDataAgent.getCreditsByMovie(movieId).then((actor) {
+  void getCreditsByMovie(int movieId) {
+    _mDataAgent.getCreditsByMovie(movieId).then((actor) {
       mActorDao.saveAllActors(actor ?? []);
-      return Future.value(actor);
     });
   }
 
@@ -75,8 +74,12 @@ class TheMovieDbModelImpl implements TheMovieDbModel {
 
   //Database
   @override
-  Future<List<ActorVO>?> getCreditsByMovieFromDatabase(int movieId) {
-    return Future.value(mActorDao.getAllActors());
+  Stream<List<ActorVO>?> getCreditsByMovieFromDatabase(int movieId) {
+    getCreditsByMovie(movieId);
+    return mActorDao
+        .getActorsEventStream()
+        .startWith(mActorDao.getActorsStream())
+        .map((event) => mActorDao.getAllActors());
   }
 
   @override

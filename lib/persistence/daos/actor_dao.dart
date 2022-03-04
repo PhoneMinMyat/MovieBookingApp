@@ -18,7 +18,21 @@ class ActorDao {
   }
 
   List<ActorVO> getAllActors() {
-    return getActorBox().values.toList();
+    List<ActorVO> actorList = getActorBox().values.toList();
+    if(actorList.isNotEmpty){
+      return actorList;
+    }else{
+      return [];
+    }
+  }
+
+  //Reactive
+  Stream<void> getActorsEventStream(){
+    return getActorBox().watch();
+  }
+
+  Stream<List<ActorVO>> getActorsStream(){
+    return Stream.value(getAllActors());
   }
 
   Box<ActorVO> getActorBox() {

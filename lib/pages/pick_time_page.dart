@@ -49,7 +49,8 @@ class _PickTimePageState extends State<PickTimePage> {
         .where((date) => date.isSelected == true)
         .toList()
         .first
-        .date.toString();
+        .date
+        .toString();
     return selectedDate;
   }
 
@@ -79,10 +80,10 @@ class _PickTimePageState extends State<PickTimePage> {
     //   });
     // }).catchError((error) => print(error));
 
-    
     //Database
     mTmbaModel
-        .getCinemaDayTimeslotFromDatabase(getSelectedDate())
+        .getCinemaDayTimeslotFromDatabase(
+            getSelectedDate(), widget.movieId.toString())
         .listen((cinema) {
       setState(() {
         cinemaList = cinema?.cinemaList;
@@ -95,8 +96,7 @@ class _PickTimePageState extends State<PickTimePage> {
       try {
         ErrorResponse errorResponse =
             ErrorResponse.fromJson(error.response?.data);
-      } on Error catch (_) {
-      }
+      } on Error catch (_) {}
     } else {
       print(error.toString());
     }
@@ -371,8 +371,7 @@ class ChooseDateSectionView extends StatelessWidget {
                   date.getWeekday(),
                   style: TextStyle(
                       color: (isSelected) ? Colors.white : Colors.grey,
-                      fontSize:
-                          (isSelected) ? TEXT_HEADING : TEXT_REGULAR_3x,
+                      fontSize: (isSelected) ? TEXT_HEADING : TEXT_REGULAR_3x,
                       fontWeight: (isSelected) ? FontWeight.w700 : null),
                 ),
                 Text(

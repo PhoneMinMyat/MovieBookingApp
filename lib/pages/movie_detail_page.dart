@@ -47,20 +47,20 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
 
     //ActorList
     //Network
-    _mMovieModel.getCreditsByMovie(widget.movieId).then((actorList) {
-      setState(() {
-        this.actorList = actorList;
-      });
-    }).catchError((error) => print(error));
+    // _mMovieModel.getCreditsByMovie(widget.movieId).then((actorList) {
+    //   setState(() {
+    //     this.actorList = actorList;
+    //   });
+    // }).catchError((error) => print(error));
 
     //Database
     _mMovieModel
         .getCreditsByMovieFromDatabase(widget.movieId)
-        .then((actorList) {
+        .listen((actorList) {
       setState(() {
         this.actorList = actorList;
       });
-    }).catchError((error) => print(error));
+    }).onError((error) => print(error));
     super.initState();
   }
 

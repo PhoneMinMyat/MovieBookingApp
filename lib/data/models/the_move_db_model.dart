@@ -7,14 +7,14 @@ abstract class TheMovieDbModel {
   void getNowPlayingMovies();
   void getUpcomingMovies();
   void getMovieDetails(int movieId);
-  Future<List<ActorVO>?> getCreditsByMovie(int movieId);
+  void getCreditsByMovie(int movieId);
   Future<List<GenreVO>?> getGenres();
 
   //Database
   Stream<List<MovieVO>?> getNowPlayingMoviesFromDatabase();
   Stream<List<MovieVO>?> getUpcomingMoviesFromDatabase();
   Stream<MovieVO?> getMovieDetailsFromDatabase(int movieId);
-  Future<List<ActorVO>?> getCreditsByMovieFromDatabase(int movieId);
+  Stream<List<ActorVO>?> getCreditsByMovieFromDatabase(int movieId);
   Future<List<GenreVO>?> getGenresFromDatabase();
 
   Future<String> getGenresById(List<int> idList);

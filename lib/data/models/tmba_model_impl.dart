@@ -181,7 +181,8 @@ class TmbaModelImpl implements TmbaModel {
   }
 
   @override
-  Stream<CinemaListVO?> getCinemaDayTimeslotFromDatabase(String date) {
+  Stream<CinemaListVO?> getCinemaDayTimeslotFromDatabase(String date, String movieId) {
+    getCinemaDayTimeslot(movieId, date);
     return _mCinemaDao
         .getCinemaListEventStream()
         .startWith(_mCinemaDao.getCinemaListStream(date))
@@ -190,6 +191,7 @@ class TmbaModelImpl implements TmbaModel {
 
   @override
   Stream<List<SnackVO>?> getSnackListFromDatabase() {
+    getSnackList();
     return _mSnackDao
         .getSnackListEventStream()
         .startWith(_mSnackDao.getSnackListStream())

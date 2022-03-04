@@ -29,7 +29,7 @@ abstract class TmbaModel {
   //Database
   Stream<ProfileVO> getProfileFromDatabase();
   void deleteAllProfileFromDatabase();
-  Stream<CinemaListVO?> getCinemaDayTimeslotFromDatabase(String date);
+  Stream<CinemaListVO?> getCinemaDayTimeslotFromDatabase(String date, String movieId);
   Stream<List<SnackVO>?> getSnackListFromDatabase();
   Stream<List<PaymentMethodVO>?> getPaymentMethodFromDatabase();
 }
