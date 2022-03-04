@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">The Movie Booking App</string>
+    <string name="facebook_app_id">281741757397505</string>
+    <string name="fb_login_protocol_scheme">fb281741757397505</string>
+    <string name="facebook_client_token">2c8ddf5d14132a02d883c2f1f14c9b81</string>
+</resources>
