@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:movie_booking_app/bloc/home_bloc.dart';
 import 'package:movie_booking_app/data/models/the_move_db_model.dart';
 import 'package:movie_booking_app/data/models/the_move_db_model_impl.dart';
 import 'package:movie_booking_app/data/models/tmba_model.dart';
@@ -16,6 +17,7 @@ import 'package:movie_booking_app/resources/dimens.dart';
 import 'package:movie_booking_app/resources/string.dart';
 import 'package:movie_booking_app/viewitems/movielist_items.dart';
 import 'package:movie_booking_app/widgets/title_text.dart';
+import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -27,84 +29,15 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  TheMovieDbModel mMovieModel = TheMovieDbModelImpl();
-  TmbaModel mTmbaModel = TmbaModelImpl();
-
-  //STATE VARIABLE
-  ProfileVO? profile;
-  List<MovieVO>? nowPlayingMovieList;
-  List<MovieVO>? upcomingMovieList;
-  List<GenreVO>? genreList;
-
-  
-
-  @override
-  void initState() {
-    //Profile
-    
-    mTmbaModel.getProfileFromDatabase().listen((profileFromDB) {
-      setState(() {
-        profile = profileFromDB;
-      });
-    }).onError((error) => print(error.toString()));
-
-    ///NowPlaying
-    ///Network
-    // mMovieModel.getNowPlayingMovies().then((movieList) {
-    //   setState(() {
-    //     nowPlayingMovieList = movieList;
-    //   });
-    // }).catchError((error) => print(error.toString()));
-
-    ///Database
-    mMovieModel.getNowPlayingMoviesFromDatabase().listen((movieList) {
-      setState(() {
-        nowPlayingMovieList = movieList;
-      });
-    }).onError((error) => print(error.toString()));
-
-    ///Upcoming
-    ///Network
-    // mMovieModel.getUpcomingMovies().then((movieList) {
-    //   setState(() {
-    //     upcomingMovieList = movieList;
-    //   });
-    // }).catchError((error) => print(error.toString()));
-
-    ///Database
-    mMovieModel.getUpcomingMoviesFromDatabase().listen((movieList) {
-      setState(() {
-        upcomingMovieList = movieList;
-      });
-    }).onError((error) => print(error.toString()));
-
-    ///Genre
-    ///Network
-    mMovieModel.getGenres().then((genres) {
-      setState(() {
-        genreList = genres;
-      });
-    }).catchError((error) => print(error.toString()));
-
-    ///Database
-    mMovieModel.getGenresFromDatabase().then((genres) {
-      setState(() {
-        genreList = genres;
-      });
-    }).catchError((error) => print(error.toString()));
-
-    super.initState();
-  }
-
-  void logOut() {
-    setState(() {
-      mTmbaModel.postLogOut().then((code) {
-        if (code == 0) {
-          Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const WelcomePage()));
-        }
-      }).catchError((error) => print(error));
-    });
+  void logOut(HomeBloc bloc) {
+    bloc.tabLogOut().then((success) {
+      Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const WelcomePage(),
+          ),
+          (Route<dynamic> route) => false);
+    }).catchError((error) {});
   }
 
   void navigationToMovieDetailPage(BuildContext context, int? movieId) {
@@ -124,49 +57,64 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      appBar: HomePageAppBar(() {
-        openDrawer();
-      }),
-      drawer: MenuDrawerSection(
-        () {
-          logOut();
-        },
-        profile: profile ?? ProfileVO(),
-      ),
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ProfileSectionView(
-              name: profile?.name ?? '',
+    return ChangeNotifierProvider(
+      create: (context) => HomeBloc(),
+      child: Selector<HomeBloc, ProfileVO?>(
+        selector: (context, bloc) => bloc.profile,
+        builder: (context, profile, child) => Scaffold(
+          key: _scaffoldKey,
+          appBar: HomePageAppBar(() {
+            openDrawer();
+          }),
+          drawer: MenuDrawerSection(
+            () {
+              HomeBloc bloc = Provider.of<HomeBloc>(context, listen: false);
+              logOut(bloc);
+            },
+            profile: profile ?? ProfileVO(),
+          ),
+          backgroundColor: Colors.white,
+          body: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ProfileSectionView(
+                  name: profile?.name ?? '',
+                ),
+                const SizedBox(
+                  height: MARGIN_MEDIUM_3x,
+                ),
+                Selector<HomeBloc, List<MovieVO>?>(
+                  selector: (context, bloc) => bloc.nowPlayingMovieList,
+                  builder: (context, nowPlayingMovieList, child) =>
+                      HorizontalMovieListView(
+                    (movieId) {
+                      navigationToMovieDetailPage(context, movieId);
+                    },
+                    headerText: HOMEPAGE_NOW_SHOWING_TEXT,
+                    movieList: nowPlayingMovieList ?? [],
+                  ),
+                ),
+                const SizedBox(
+                  height: MARGIN_MEDIUM_3x,
+                ),
+                Selector<HomeBloc, List<MovieVO>?>(
+                  selector: (context, bloc) => bloc.upcomingMovieList,
+                  builder: (context, upcomingMovieList, child) =>
+                      HorizontalMovieListView(
+                    (movieId) {
+                      navigationToMovieDetailPage(context, movieId);
+                    },
+                    headerText: HOMEPAGE_COMING_SOON_TEXT,
+                    movieList: upcomingMovieList ?? [],
+                  ),
+                ),
+                const SizedBox(
+                  height: MARGIN_MEDIUM_3x,
+                ),
+              ],
             ),
-            const SizedBox(
-              height: MARGIN_MEDIUM_3x,
-            ),
-            HorizontalMovieListView(
-              (movieId) {
-                navigationToMovieDetailPage(context, movieId);
-              },
-              headerText: HOMEPAGE_NOW_SHOWING_TEXT,
-              movieList: nowPlayingMovieList ?? [],
-            ),
-            const SizedBox(
-              height: MARGIN_MEDIUM_3x,
-            ),
-            HorizontalMovieListView(
-              (movieId) {
-                navigationToMovieDetailPage(context, movieId);
-              },
-              headerText: HOMEPAGE_COMING_SOON_TEXT,
-              movieList: upcomingMovieList ?? [],
-            ),
-            const SizedBox(
-              height: MARGIN_MEDIUM_3x,
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -294,16 +242,13 @@ class DrawerUserInfoSectionView extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.4,
-                  child: FittedBox(
-                    fit: BoxFit.fitWidth,
-                    child: Text(
-                      email,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: DRAWER_GMAIL_FONT_SIZE),
-                    ),
+                FittedBox(
+                  fit: BoxFit.fitWidth,
+                  child: Text(
+                    email,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: DRAWER_GMAIL_FONT_SIZE),
                   ),
                 ),
                 const SizedBox(

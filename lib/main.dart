@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:movie_booking_app/bloc/my_app_bloc.dart';
 import 'package:movie_booking_app/data/models/tmba_model.dart';
 import 'package:movie_booking_app/data/models/tmba_model_impl.dart';
 import 'package:movie_booking_app/data/vos/actor_vo.dart';
@@ -19,6 +20,7 @@ import 'package:movie_booking_app/data/vos/timeslots_vo.dart';
 import 'package:movie_booking_app/pages/home_page.dart';
 import 'package:movie_booking_app/pages/welcome_page.dart';
 import 'package:movie_booking_app/persistence/hive_constants.dart';
+import 'package:provider/provider.dart';
 
 void main() async {
   await Hive.initFlutter();
@@ -43,47 +45,32 @@ void main() async {
   await Hive.openBox<MovieVO>(BOX_NAME_MOVIE_VO);
   await Hive.openBox<GenreVO>(BOX_NAME_GENRE_VO);
   await Hive.openBox<CinemaListVO>(BOX_NAME_CINEMA_LIST_VO);
+  await Hive.openBox<CinemaVO>(BOX_NAME_CINEMA_VO);
   await Hive.openBox<SnackVO>(BOX_NAME_SNACK_VO);
   await Hive.openBox<PaymentMethodVO>(BOX_NAME_PAYMENT_METHOD_VO);
   runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
   @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  TmbaModel tmbaModel = TmbaModelImpl();
-  
-  //State Variable
-  ProfileVO? userProfile;
-
-  @override
-  void initState() {
-    tmbaModel.getProfileFromDatabase().listen((profile) {
-      setState(() {
-        userProfile = profile;
-      });
-      if (userProfile?.token != null) {
-        tmbaModel.getSnackList();
-      }
-    }).onError((error) {
-      print(error);
-    });
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    //tmbaModel.deleteAllProfileFromDatabase();
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(fontFamily: 'Montserrat'),
-      home:
-          (userProfile?.token == null) ? const WelcomePage() : const HomePage(),
+    return ChangeNotifierProvider(
+      create: (context) => MyAppBloc(),
+      child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(fontFamily: 'Montserrat'),
+          home: Selector<MyAppBloc, ProfileVO?>(
+            selector: (context, bloc) => bloc.userProfile,
+            builder: (context, value, child) {
+              if (value?.token != null) {
+                return const HomePage();
+              } else {
+                return const WelcomePage();
+              }
+            },
+          )),
     );
   }
 }

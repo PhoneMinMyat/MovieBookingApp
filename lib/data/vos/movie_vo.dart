@@ -1,11 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:json_annotation/json_annotation.dart';
+
 import 'package:movie_booking_app/data/vos/collection_vo.dart';
 import 'package:movie_booking_app/data/vos/country_vo.dart';
 import 'package:movie_booking_app/data/vos/genre_vo.dart';
 import 'package:movie_booking_app/data/vos/production_company_vo.dart';
 import 'package:movie_booking_app/data/vos/spoken_language_vo.dart';
-
 import 'package:movie_booking_app/persistence/hive_constants.dart';
 
 part 'movie_vo.g.dart';
@@ -207,5 +208,72 @@ class MovieVO {
   @override
   String toString() {
     return 'MovieVO(adult: $adult, backdropPath: $backdropPath, genreIds: $genreIds, id: $id, originalLanguage: $originalLanguage, originalTitle: $originalTitle, overview: $overview, popularity: $popularity, posterPath: $posterPath, releaseDate: $releaseDate, title: $title, video: $video, voteAverage: $voteAverage, voteCount: $voteCount, belongsToCollection: $belongsToCollection, budget: $budget, genres: $genres, homepage: $homepage, imdbId: $imdbId, productionCompanies: $productionCompanies, productionCountries: $productionCountries, revenue: $revenue, runtime: $runtime, spokenLanguage: $spokenLanguage, status: $status, tagLine: $tagLine)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+  
+    return other is MovieVO &&
+      other.adult == adult &&
+      other.backdropPath == backdropPath &&
+      listEquals(other.genreIds, genreIds) &&
+      other.id == id &&
+      other.originalLanguage == originalLanguage &&
+      other.originalTitle == originalTitle &&
+      other.overview == overview &&
+      other.popularity == popularity &&
+      other.posterPath == posterPath &&
+      other.releaseDate == releaseDate &&
+      other.title == title &&
+      other.video == video &&
+      other.voteAverage == voteAverage &&
+      other.voteCount == voteCount &&
+      other.belongsToCollection == belongsToCollection &&
+      other.budget == budget &&
+      listEquals(other.genres, genres) &&
+      other.homepage == homepage &&
+      other.imdbId == imdbId &&
+      listEquals(other.productionCompanies, productionCompanies) &&
+      listEquals(other.productionCountries, productionCountries) &&
+      other.revenue == revenue &&
+      other.runtime == runtime &&
+      listEquals(other.spokenLanguage, spokenLanguage) &&
+      other.status == status &&
+      other.tagLine == tagLine &&
+      other.isNowPlaying == isNowPlaying &&
+      other.isUpcoming == isUpcoming;
+  }
+
+  @override
+  int get hashCode {
+    return adult.hashCode ^
+      backdropPath.hashCode ^
+      genreIds.hashCode ^
+      id.hashCode ^
+      originalLanguage.hashCode ^
+      originalTitle.hashCode ^
+      overview.hashCode ^
+      popularity.hashCode ^
+      posterPath.hashCode ^
+      releaseDate.hashCode ^
+      title.hashCode ^
+      video.hashCode ^
+      voteAverage.hashCode ^
+      voteCount.hashCode ^
+      belongsToCollection.hashCode ^
+      budget.hashCode ^
+      genres.hashCode ^
+      homepage.hashCode ^
+      imdbId.hashCode ^
+      productionCompanies.hashCode ^
+      productionCountries.hashCode ^
+      revenue.hashCode ^
+      runtime.hashCode ^
+      spokenLanguage.hashCode ^
+      status.hashCode ^
+      tagLine.hashCode ^
+      isNowPlaying.hashCode ^
+      isUpcoming.hashCode;
   }
 }

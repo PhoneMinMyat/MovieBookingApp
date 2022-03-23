@@ -45,4 +45,25 @@ class CardVO {
   String toString() {
     return 'CardVO(id: $id, cardHolder: $cardHolder, cardNumber: $cardNumber, expirationDate: $expirationDate, cardType: $cardType)';
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+  
+    return other is CardVO &&
+      other.id == id &&
+      other.cardHolder == cardHolder &&
+      other.cardNumber == cardNumber &&
+      other.expirationDate == expirationDate &&
+      other.cardType == cardType;
+  }
+
+  @override
+  int get hashCode {
+    return id.hashCode ^
+      cardHolder.hashCode ^
+      cardNumber.hashCode ^
+      expirationDate.hashCode ^
+      cardType.hashCode;
+  }
 }

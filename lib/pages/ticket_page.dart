@@ -2,10 +2,7 @@ import 'package:barcode_widgets/barcode_flutter.dart';
 import 'package:dotted_line/dotted_line.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:movie_booking_app/data/models/the_move_db_model.dart';
-import 'package:movie_booking_app/data/models/the_move_db_model_impl.dart';
-import 'package:movie_booking_app/data/models/tmba_model.dart';
-import 'package:movie_booking_app/data/models/tmba_model_impl.dart';
+import 'package:movie_booking_app/bloc/ticket_bloc.dart';
 import 'package:movie_booking_app/data/vos/checkout_vo.dart';
 import 'package:movie_booking_app/data/vos/movie_vo.dart';
 import 'package:movie_booking_app/network/api_constants.dart';
@@ -14,59 +11,46 @@ import 'package:movie_booking_app/resources/dimens.dart';
 import 'package:movie_booking_app/resources/string.dart';
 import 'package:movie_booking_app/viewitems/simple_appbar_view.dart';
 import 'package:movie_booking_app/widgets/header_text.dart';
+import 'package:provider/provider.dart';
 
-class TicketPage extends StatefulWidget {
+class TicketPage extends StatelessWidget {
   final CheckoutVO checkout;
   const TicketPage({required this.checkout, Key? key}) : super(key: key);
 
-  @override
-  State<TicketPage> createState() => _TicketPageState();
-}
-
-class _TicketPageState extends State<TicketPage> {
-  //State Variable
-  MovieVO? movie;
-
-  TheMovieDbModel _theMovieDbModel = TheMovieDbModelImpl();
-
-  @override
-  void initState() {
-    _theMovieDbModel
-        .getMovieDetailsFromDatabase(widget.checkout.movieId ?? 0)
-        .listen((movieDetails) {
-      setState(() {
-        movie = movieDetails;
-      });
-    }).onError((error) => print(error));
-    super.initState();
-  }
+ 
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: const SimpleAppBarView(
-        isCrossIcon: true,
-        isTicketPage: true,
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const TitleSectionView(),
-            const SizedBox(height: MARGIN_MEDIUM_2x),
-            Padding(
-              padding:const EdgeInsets.symmetric(horizontal: MARGIN_LARGE),
-              child: TicketSectionView(
-                movieTitle: movie?.title ?? '',
-                movieLength: '${movie?.runtime}m',
-                movieImageUrl: movie?.backdropPath ?? '',
-                checkout: widget.checkout,
-              ),
+    return ChangeNotifierProvider(
+      create: (context) => TicketBloc(checkout.movieId ?? 0),
+      child: Selector<TicketBloc, MovieVO?>(
+        selector: (context, bloc)=> bloc.movie,
+        builder: (context, movie, child) => Scaffold(
+          backgroundColor: Colors.white,
+          appBar: const SimpleAppBarView(
+            isCrossIcon: true,
+            isTicketPage: true,
+          ),
+          body:(movie == null)? const CircularProgressIndicator() :SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const TitleSectionView(),
+                const SizedBox(height: MARGIN_MEDIUM_2x),
+                Padding(
+                  padding:const EdgeInsets.symmetric(horizontal: MARGIN_LARGE),
+                  child: TicketSectionView(
+                    movieTitle: movie.title ?? '',
+                    movieLength: '${movie.runtime}m',
+                    movieImageUrl: movie.backdropPath ?? '',
+                    checkout: checkout,
+                  ),
+                ),
+                const SizedBox(height: MARGIN_XXLARGE),
+              ],
             ),
-            const SizedBox(height: MARGIN_XXLARGE),
-          ],
+          ),
         ),
       ),
     );
@@ -287,6 +271,7 @@ class TicketMovieTitleAndLengthSectionView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         FittedBox(
           fit: BoxFit.fitHeight,

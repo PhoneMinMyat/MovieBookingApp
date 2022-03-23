@@ -51,6 +51,6 @@ class CheckOutRequest {
 
   @override
   String toString() {
-    return 'CheckOutRequest(cinemaDayTimeslotId: $cinemaDayTimeslotId, row: $row, seatNumber: $seatNumber, bookingDate: $bookingDate, totalPrice: $totalPrice, movieId: $movieId, cardId: $cardId, cinemaId: $cinemaId, snacks: $snacks)';
+    return 'CheckOutRequest(cinemaDayTimeslotId: $cinemaDayTimeslotId, row: $row, seatNumber: $seatNumber, bookingDate: $bookingDate, totalPrice: $totalPrice, movieId: $movieId, cardId: $cardId, cinemaId: $cinemaId, snacks: ${snacks.toString()})';
   }
 }

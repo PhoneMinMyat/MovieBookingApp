@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:movie_booking_app/bloc/register_bloc.dart';
 import 'package:movie_booking_app/data/models/tmba_model.dart';
 import 'package:movie_booking_app/data/models/tmba_model_impl.dart';
 import 'package:movie_booking_app/data/vos/profile_vo.dart';
@@ -12,31 +13,23 @@ import 'package:movie_booking_app/resources/color.dart';
 import 'package:movie_booking_app/resources/dimens.dart';
 import 'package:movie_booking_app/resources/string.dart';
 import 'package:movie_booking_app/widgets/long_button.dart';
+import 'package:provider/provider.dart';
 
-class LogInPage extends StatefulWidget {
-  const LogInPage({Key? key}) : super(key: key);
+class LogInPage extends StatelessWidget {
+   LogInPage({Key? key}) : super(key: key);
 
-  @override
-  State<LogInPage> createState() => _LogInPageState();
-}
-
-class _LogInPageState extends State<LogInPage> {
-  final TmbaModel tmbaModel = TmbaModelImpl();
+ 
 
   //Variable
-  String googleToken = '';
-  String facebookToken = '';
-
-  //State Variable
-  ProfileVO? profile;
-
-  //Variables
-  bool isSignIn = false;
+  //Delete
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   TextEditingController confirmPasswordController = TextEditingController();
   TextEditingController nameController = TextEditingController();
   TextEditingController phoneNumberController = TextEditingController();
+
+  //State Variable
+  ProfileVO? profile;
 
   void navigateToHomePage(BuildContext context) {
     Navigator.pushAndRemoveUntil(
@@ -47,28 +40,26 @@ class _LogInPageState extends State<LogInPage> {
         (Route<dynamic> route) => false);
   }
 
-  void registerUser(BuildContext context) {
+  void registerUser(BuildContext context, TextEditingController nameController,
+      TextEditingController emailController, RegisterBloc bloc) {
     if (nameController.text.isNotEmpty &&
         emailController.text.isNotEmpty &&
         phoneNumberController.text.isNotEmpty &&
         passwordController.text.isNotEmpty &&
         confirmPasswordController.text.isNotEmpty) {
       if (passwordController.text == confirmPasswordController.text) {
-        tmbaModel
-            .postRegisterData(
-                nameController.text,
-                emailController.text,
-                phoneNumberController.text,
-                passwordController.text,
-                googleToken,
-                facebookToken)
-            .then((profileRes) {
-          profile = profileRes;
-          if (profile?.token != null) {
-            navigateToHomePage(context);
-          }
+        bloc
+            .registerUser(
+          nameController.text,
+          emailController.text,
+          phoneNumberController.text,
+          passwordController.text,
+        )
+            .then((success) {
+              navigateToHomePage(context);
+          
         }).catchError((error) {
-          handleError(context, error);
+          print(error);
         });
       } else {
         handleError(context, 'Passsword and Confirm Passoword must be same');
@@ -78,15 +69,15 @@ class _LogInPageState extends State<LogInPage> {
     }
   }
 
-  void loginWithEmail(BuildContext context) {
+  void loginWithEmail(BuildContext context, RegisterBloc bloc,TextEditingController nameController,
+      TextEditingController emailController,) {
     if (emailController.text.isNotEmpty && passwordController.text.isNotEmpty) {
-      tmbaModel
-          .postLogInWithGmail(emailController.text, passwordController.text)
-          .then((profileRes) {
-        profile = profileRes;
+      bloc
+          .loginWithEmail(emailController.text, passwordController.text)
+          .then((success) {
         navigateToHomePage(context);
       }).catchError((error) {
-        handleError(context, error);
+        print(error);
       });
     } else {
       handleError(context, 'Please Fill All Fields');
@@ -117,123 +108,96 @@ class _LogInPageState extends State<LogInPage> {
     );
   }
 
-  void tapTabBar() {
-    setState(() {
-      isSignIn = !isSignIn;
-    });
+  void signInwithGoogle(RegisterBloc bloc) {
+    bloc.signInWithGoogle();
   }
 
-  void signInwithGoogle() {
-    GoogleSignIn _googleSignIn = GoogleSignIn(scopes: [
-      'email',
-      'https://www.googleapis.com/auth/contacts.readonly',
-    ]);
-
-    _googleSignIn.signIn().then((googleAccount) {
-      googleToken = googleAccount?.id ?? '';
-      print('Google Token ===> $googleToken');
-      setState(() {
-        emailController.text = googleAccount?.email ?? '';
-        nameController.text = googleAccount?.displayName ?? '';
-      });
-    });
+  void loginWithGoogle(BuildContext context, RegisterBloc bloc) {
+    bloc.logInWithGoogle().then((success) {
+      navigateToHomePage(context);
+    }).catchError((error) => print(error));
   }
 
-  void loginWithGoogle() {
-    GoogleSignIn _googleSignIn = GoogleSignIn(scopes: [
-      'email',
-      'https://www.googleapis.com/auth/contacts.readonly',
-    ]);
-
-    _googleSignIn.signIn().then((googleAccount) {
-      googleToken = googleAccount?.id ?? '';
-      print('Google Token ====> $googleToken');
-      if (googleToken != '') {
-        tmbaModel.postLogInWithGoogle(googleToken).then((profileResponse) {
-          profile = profileResponse;
-
-          if (profile?.token != null) {
-            navigateToHomePage(context);
-          }
-        }).catchError((error) => print(error));
-      }
-    });
+  void registerWithFacebook(RegisterBloc bloc) async {
+    bloc.registerWithFacebook();
   }
 
-  void registerWithFacebook() async {
-    final LoginResult result = await FacebookAuth.instance.login();
-
-    if (result.status == LoginStatus.success) {
-      final AccessToken? accessToken = result.accessToken;
-      facebookToken = accessToken?.userId ?? '';
-      final userData = await FacebookAuth.instance.getUserData();
-
-      setState(() {
-        nameController.text = userData['name'].toString();
-        emailController.text = userData['email'].toString();
-      });
-      print('facebookToken ===> $facebookToken');
-    } else {
-      print(result.status);
-      print(result.message);
-    }
-  }
-
-  void loginWIthFacebook() async {
-    final LoginResult result = await FacebookAuth.instance.login();
-
-    if (result.status == LoginStatus.success) {
-      final AccessToken? accessToken = result.accessToken;
-      facebookToken = accessToken?.userId ?? '';
-      if (facebookToken != '') {
-        tmbaModel.postLogInWithFacebook(facebookToken).then((profileResponse) {
-          profile = profileResponse;
-          navigateToHomePage(context);
-        }).catchError((error) => print(error));
-      }
-    } else {
-      print(result.status);
-      print(result.message);
-    }
+  void loginWIthFacebook(BuildContext context, RegisterBloc bloc) async {
+    bloc.loginWithFacebook().then((success) {
+      navigateToHomePage(context);
+    }).catchError((error) => print(error));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.all(MARGIN_MEDIUM_2x),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: MARGIN_XXLARGE + MARGIN_XXLARGE),
-              const WelcomeHeaderTextSection(),
-              const SizedBox(height: MARGIN_XLARGE),
-              UserInputSectionView(
-                isSignIn: isSignIn,
-                emailController: emailController,
-                passwordController: passwordController,
-                confirmPasswordController: confirmPasswordController,
-                nameController: nameController,
-                phoneNumberController: phoneNumberController,
-                tapTabBar: () {
-                  tapTabBar();
-                },
+    return ChangeNotifierProvider(
+      create: (context) => RegisterBloc(),
+      child: Scaffold(
+        body: Selector<RegisterBloc, TextEditingController>(
+          selector: (context, bloc) => bloc.nameController,
+          builder: (context, nameController, child) =>
+              Selector<RegisterBloc, TextEditingController>(
+            selector: (context, bloc) => bloc.emailController,
+            builder: (context, emailController, child) => SingleChildScrollView(
+              child: Container(
+                padding: const EdgeInsets.all(MARGIN_MEDIUM_2x),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: MARGIN_XXLARGE + MARGIN_XXLARGE),
+                    const WelcomeHeaderTextSection(),
+                    const SizedBox(height: MARGIN_XLARGE),
+                    Selector<RegisterBloc, bool?>(
+                      selector: (context, bloc) => bloc.isSignIn,
+                      builder: (context, isSignIn, child) =>
+                          UserInputSectionView(
+                        isSignIn: isSignIn ?? false,
+                        emailController: emailController,
+                        passwordController: passwordController,
+                        confirmPasswordController: confirmPasswordController,
+                        nameController: nameController,
+                        phoneNumberController: phoneNumberController,
+                        tapTabBar: () {
+                          RegisterBloc bloc =
+                              Provider.of<RegisterBloc>(context, listen: false);
+                          bloc.tapTabBar();
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: MARGIN_MEDIUM_2x),
+                    Selector<RegisterBloc, bool?>(
+                      selector: (context, bloc) => bloc.isSignIn,
+                      builder: (context, isSignIn, child) =>
+                          ButtonGroupSectionView(
+                        () {
+                          RegisterBloc bloc =
+                              Provider.of<RegisterBloc>(context, listen: false);
+                          (isSignIn ?? false)
+                              ? registerUser(context, nameController,
+                                  emailController, bloc)
+                              : loginWithEmail(context, bloc, nameController, emailController);
+                        },
+                        () {
+                          RegisterBloc bloc =
+                              Provider.of<RegisterBloc>(context, listen: false);
+                          (isSignIn ?? false)
+                              ? signInwithGoogle(bloc)
+                              : loginWithGoogle(context, bloc);
+                        },
+                        () {
+                          RegisterBloc bloc =
+                              Provider.of<RegisterBloc>(context, listen: false);
+                          (isSignIn ?? false)
+                              ? registerWithFacebook(bloc)
+                              : loginWIthFacebook(context, bloc);
+                        },
+                        isSignIn: isSignIn ?? false,
+                      ),
+                    )
+                  ],
+                ),
               ),
-              const SizedBox(height: MARGIN_MEDIUM_2x),
-              ButtonGroupSectionView(
-                () {
-                  (isSignIn) ? registerUser(context) : loginWithEmail(context);
-                },
-                () {
-                  (isSignIn) ? signInwithGoogle() : loginWithGoogle();
-                },
-                () {
-                  (isSignIn) ? registerWithFacebook() : loginWIthFacebook();
-                },
-                isSignIn: isSignIn,
-              )
-            ],
+            ),
           ),
         ),
       ),

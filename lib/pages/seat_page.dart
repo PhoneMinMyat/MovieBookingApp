@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:dotted_line/dotted_line.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:movie_booking_app/bloc/seat_bloc.dart';
 
 import 'package:movie_booking_app/data/models/tmba_model.dart';
 import 'package:movie_booking_app/data/models/tmba_model_impl.dart';
@@ -16,8 +17,9 @@ import 'package:movie_booking_app/viewitems/simple_appbar_view.dart';
 import 'package:movie_booking_app/widgets/floating_long_button.dart';
 import 'package:movie_booking_app/widgets/normal_text.dart';
 import 'package:movie_booking_app/widgets/title_text.dart';
+import 'package:provider/provider.dart';
 
-class SeatPage extends StatefulWidget {
+class SeatPage extends StatelessWidget {
   final TimeslotsVO time;
   final String date;
   final String movieName;
@@ -35,110 +37,21 @@ class SeatPage extends StatefulWidget {
     required this.cinemaId,
   }) : super(key: key);
 
-  @override
-  State<SeatPage> createState() => _SeatPageState();
-}
-
-class _SeatPageState extends State<SeatPage> {
-  //Models
-  final TmbaModel _mTmbaModel = TmbaModelImpl();
-
-//STATE VARIABLES
-  List<MovieSeatVO>? seatingList;
-
-  //Variables
-  List<String> selectedSeat = [];
-  double price = 0;
-  Set<String> selectedRow = {};
-
-  int getSeatColumnCount() {
-    String tempSymbol = seatingList?[0].symbol ?? 'A';
-    int numberOfColumn = seatingList
-            ?.where((seat) => seat.symbol == tempSymbol)
-            .toList()
-            .length ??
-        1;
-    return numberOfColumn;
-  }
-
-  void selectSeat(MovieSeatVO seat) {
-    setState(() {
-      if (seatingList
-              ?.firstWhere((seatFromList) => seatFromList == seat)
-              .isSelected ==
-          true) {
-        seatingList
-            ?.firstWhere((seatFromList) => seatFromList == seat)
-            .isSelected = false;
-        selectedSeat.remove(seat.seatName);
-        price -= seat.price ?? 0;
-        selectedRow.remove(seat.symbol);
-      } else {
-        if (seatingList
-                ?.firstWhere((seatFromList) => seatFromList == seat)
-                .isMovieSeatAvailable() ??
-            false) {
-          seatingList
-              ?.firstWhere((seatFromList) => seatFromList == seat)
-              .isSelected = true;
-          selectedSeat.add(seat.seatName ?? '');
-          price += seat.price ?? 0;
-          selectedRow.add(seat.symbol ?? '');
-        }
-      }
-    });
-  }
-
-  @override
-  void initState() {
-    // SeatingPlan
-    // Network
-    _mTmbaModel
-        .getCinemaSeatingPlan(
-            widget.time.cinemaDayTimeSlotId.toString(), widget.date)
-        .then((seatList) {
-      setState(() {
-        seatingList = seatList;
-      });
-    }).catchError((error) => handleError(context, error));
-    super.initState();
-  }
-
-  void handleError(BuildContext context, dynamic error) {
-    if (error is DioError) {
-      try {
-        ErrorResponse errorResponse =
-            ErrorResponse.fromJson(error.response?.data);
-        showErrorAlert(context, errorResponse.message ?? '');
-      } on Error catch (_) {
-        showErrorAlert(context, error.toString());
-      }
-    } else {
-      showErrorAlert(context, error.toString());
-    }
-  }
-
-  void showErrorAlert(BuildContext context, String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: const Text('Error!!!'),
-        content: SingleChildScrollView(child: Text(message)),
-      ),
-    );
-  }
-
-  void navigateToSubPage(BuildContext context) {
+  void navigateToSnackPage(
+      {required BuildContext context,
+      required String selectedSeat,
+      required double price,
+      required String selectedRow}) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => SnackPage(
-          bookingDate: widget.date,
-          cinemaId: widget.cinemaId,
-          selectdSeatName: selectedSeat.join(','),
-          cinemaDayTimeslotId: widget.time.cinemaDayTimeSlotId ?? 0,
-          movieId: widget.movieId,
+          bookingDate: date,
+          cinemaId: cinemaId,
+          selectdSeatName: selectedSeat,
+          cinemaDayTimeslotId: time.cinemaDayTimeSlotId ?? 0,
+          movieId: movieId,
           seatPrice: price,
-          row: selectedRow.toList().join(','),
+          row: selectedRow,
         ),
       ),
     );
@@ -146,61 +59,88 @@ class _SeatPageState extends State<SeatPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const SimpleAppBarView(),
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            MovieNameCinemaAndTimeSectionView(
-              movieName: widget.movieName,
-              cinema: widget.cinema,
-              showdate: widget.date,
-              time: widget.time.startTime ?? '',
-            ),
-            const SizedBox(
-              height: MARGIN_XLARGE,
-            ),
-            (seatingList == null)
-                ? const SizedBox(
-                    width: 100, height: 100, child: CircularProgressIndicator())
-                : SeatSectionView(
-                    (seat) => selectSeat(seat),
-                    seatList: seatingList ?? [MovieSeatVO()],
-                    seatColumnCount: getSeatColumnCount(),
-                  ),
-            const SizedBox(
-              height: MARGIN_XLARGE,
-            ),
-            const SeatStatusColorSectionView(),
-            const SizedBox(
-              height: MARGIN_XLARGE,
-            ),
-            const DottedLineSectionView(),
-            const SizedBox(
-              height: MARGIN_MEDIUM_3x,
-            ),
-            TicketsAndSeatsSectionView(
-              selectedNumberOfTicket: selectedSeat.length,
-              selectedSeatName: selectedSeat.join(','),
-            ),
-            const SizedBox(
-              height: MARGIN_XLARGE,
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: MARGIN_MEDIUM_2x),
-              child: FloatingLongButton(
-                () {
-                  navigateToSubPage(context);
-                },
-                buttonText: 'Buy Tickets for \$$price',
-                isNeedTransparentSpace: false,
+    return ChangeNotifierProvider(
+      create: (context) => SeatBloc(time.cinemaDayTimeSlotId.toString(), date),
+      child: Selector<SeatBloc, List<MovieSeatVO>?>(
+          selector: (context, bloc) => bloc.seatingList,
+          shouldRebuild: (previous, next) => previous != next,
+          builder: (context, seatingList, child) {
+            SeatBloc bloc = Provider.of<SeatBloc>(context, listen: false);
+            return Scaffold(
+              appBar: const SimpleAppBarView(),
+              backgroundColor: Colors.white,
+              body: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    MovieNameCinemaAndTimeSectionView(
+                      movieName: movieName,
+                      cinema: cinema,
+                      showdate: date,
+                      time: time.startTime ?? '',
+                    ),
+                    const SizedBox(
+                      height: MARGIN_XLARGE,
+                    ),
+                    (seatingList == null)
+                        ? const SizedBox(
+                            width: 100,
+                            height: 100,
+                            child: CircularProgressIndicator())
+                        : SeatSectionView(
+                            (seat) {
+                              bloc.selectSeat(seat);
+                            },
+                            seatList: seatingList,
+                            seatColumnCount: bloc.getSeatColumnCount(),
+                          ),
+                    const SizedBox(
+                      height: MARGIN_XLARGE,
+                    ),
+                    const SeatStatusColorSectionView(),
+                    const SizedBox(
+                      height: MARGIN_XLARGE,
+                    ),
+                    const DottedLineSectionView(),
+                    const SizedBox(
+                      height: MARGIN_MEDIUM_3x,
+                    ),
+                    Selector<SeatBloc, List<String>?>(
+                      selector: (context, bloc) => bloc.selectedSeat,
+                      builder: (context, selectedSeat, child) =>
+                          TicketsAndSeatsSectionView(
+                        selectedNumberOfTicket: selectedSeat?.length ?? 0,
+                        selectedSeatName: selectedSeat?.join(',') ?? '',
+                      ),
+                    ),
+                    const SizedBox(
+                      height: MARGIN_XLARGE,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: MARGIN_MEDIUM_2x),
+                      child: Selector<SeatBloc, double>(
+                        selector: (context, bloc) => bloc.price,
+                        builder: (context, price, child) => FloatingLongButton(
+                          () {
+                            navigateToSnackPage(
+                                context: context,
+                                price: price,
+                                selectedRow:
+                                    bloc.getSelectedRowAsFormattedString(),
+                                selectedSeat:
+                                    bloc.getSelectedSeatAsFormattedString());
+                          },
+                          buttonText: 'Buy Tickets for \$$price',
+                          isNeedTransparentSpace: false,
+                        ),
+                      ),
+                    )
+                  ],
+                ),
               ),
-            )
-          ],
-        ),
-      ),
+            );
+          }),
     );
   }
 }

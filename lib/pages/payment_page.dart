@@ -1,6 +1,7 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:movie_booking_app/bloc/payment_bloc.dart';
 import 'package:movie_booking_app/data/models/requests/checkout_request.dart';
 import 'package:movie_booking_app/data/models/requests/snack_request.dart';
 import 'package:movie_booking_app/data/models/tmba_model.dart';
@@ -20,8 +21,9 @@ import 'package:movie_booking_app/viewitems/simple_appbar_view.dart';
 import 'package:movie_booking_app/widgets/floating_long_button.dart';
 import 'package:movie_booking_app/widgets/header_text.dart';
 import 'package:movie_booking_app/widgets/subtitle_text.dart';
+import 'package:provider/provider.dart';
 
-class PaymentPage extends StatefulWidget {
+class PaymentPage extends StatelessWidget {
   final String selectdSeatName;
   final double subTotal;
   final String bookingDate;
@@ -30,6 +32,7 @@ class PaymentPage extends StatefulWidget {
   final int movieId;
   final int cinemaId;
   final List<SnackVO> selectedSnackList;
+
   const PaymentPage({
     Key? key,
     required this.selectdSeatName,
@@ -42,60 +45,6 @@ class PaymentPage extends StatefulWidget {
     required this.selectedSnackList,
   }) : super(key: key);
 
-  @override
-  State<PaymentPage> createState() => _PaymentPageState();
-}
-
-class _PaymentPageState extends State<PaymentPage> {
-  //movie model
-  TmbaModel _tmbaModel = TmbaModelImpl();
-
-  //Requets Obj
-  CheckOutRequest checkOutRequest = CheckOutRequest();
-
-  //Variable
-  int selectedCardIndex = 0;
-
-  //State Variables
-  ProfileVO? profile;
-  CheckoutVO? checkoutInfo;
-
-  @override
-  void initState() {
-    getProfileFreomDatabase();
-    checkOutRequest = CheckOutRequest(
-      cinemaDayTimeslotId: widget.cinemaDayTimeslotId,
-      row: widget.row,
-      seatNumber: widget.selectdSeatName,
-      bookingDate: widget.bookingDate,
-      totalPrice: widget.subTotal,
-      movieId: widget.movieId,
-      cinemaId: widget.cinemaId,
-      snacks: widget.selectedSnackList
-          .map((snack) => SnackRequest(id: snack.id, quantity: snack.quantity))
-          .toList(),
-    );
-    print(checkOutRequest.toString());
-    super.initState();
-  }
-
-  void getProfileFreomDatabase() {
-    //Database
-    _tmbaModel.getProfileFromDatabase().listen((profileFromDB) {
-      setState(() {
-        profile = profileFromDB;
-        checkOutRequest.cardId = profile?.cards?.first.id ?? 0;
-      });
-    }).onError((error) => print(error));
-  }
-
-  
-
-  void changeCard(int newIndex) {
-    selectedCardIndex = newIndex;
-    checkOutRequest.cardId = profile?.cards?[selectedCardIndex].id ?? 0;
-  }
-
   void navigationToAddNewCardPage(BuildContext context) {
     Navigator.push(
       context,
@@ -105,64 +54,89 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
-  void navigateToTicketPage(BuildContext context) {
-    checkOutRequest.cardId = profile?.cards?[selectedCardIndex].id ?? 0;
-    _tmbaModel.postCheckout(checkOutRequest).then((checkout) {
-      checkoutInfo = checkout;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => TicketPage(
-            checkout: checkoutInfo ?? CheckoutVO(),
+  void navigateToTicketPage(BuildContext context, PaymentBloc bloc) {
+    bloc.checkout().then((checkoutInfoRes) {
+      print('CheckoutRes ===> ${checkoutInfoRes?.bookingDate}');
+      if (checkoutInfoRes?.bookingNo != null) {
+         Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TicketPage(
+              checkout: checkoutInfoRes ?? CheckoutVO(),
+            ),
           ),
-        ),
-      );
-
+        );
+      }
+     
     }).catchError((error) => print(error));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const SimpleAppBarView(),
-      backgroundColor: Colors.white,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: MARGIN_MEDIUM_2x),
-            child: PaymentAmountSectionView(
-              paymentAmount: widget.subTotal,
+    CheckOutRequest checkOutRequest = CheckOutRequest(
+      cinemaDayTimeslotId: cinemaDayTimeslotId,
+      row: row,
+      seatNumber: selectdSeatName,
+      bookingDate: bookingDate,
+      totalPrice: subTotal,
+      movieId: movieId,
+      cinemaId: cinemaId,
+      snacks: selectedSnackList
+          .map((snack) => SnackRequest(id: snack.id, quantity: snack.quantity))
+          .toList(),
+    );
+
+    return ChangeNotifierProvider(
+      create: (context) => PaymentBloc(checkOutRequest),
+      child: Selector<PaymentBloc, ProfileVO?>(
+        selector: (context, bloc) => bloc.profile,
+        builder: (context, profile, child) {
+          PaymentBloc bloc = Provider.of<PaymentBloc>(context, listen: false);
+          return Scaffold(
+            appBar: const SimpleAppBarView(),
+            backgroundColor: Colors.white,
+            body: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: MARGIN_MEDIUM_2x),
+                  child: PaymentAmountSectionView(
+                    paymentAmount: subTotal,
+                  ),
+                ),
+                const SizedBox(height: MARGIN_MEDIUM_2x),
+                CreditCardList(
+                  (index) {
+                    bloc.changeCard(index);
+                  },
+                  cardList: profile?.cards ?? [],
+                ),
+                const SizedBox(
+                  height: MARGIN_XLARGE,
+                ),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: MARGIN_MEDIUM_2x),
+                  child: AddNewCardView(() {
+                    navigationToAddNewCardPage(context);
+                  }),
+                ),
+                const Spacer(),
+                Padding(
+                  padding: const EdgeInsets.all(MARGIN_MEDIUM_2x),
+                  child: FloatingLongButton(
+                    () {
+                      navigateToTicketPage(context, bloc);
+                    },
+                    buttonText: CONFIRM,
+                    isNeedTransparentSpace: false,
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: MARGIN_MEDIUM_2x),
-          CreditCardList(
-            (index) {
-              changeCard(index);
-            },
-            cardList: profile?.cards ?? [],
-          ),
-          const SizedBox(
-            height: MARGIN_XLARGE,
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: MARGIN_MEDIUM_2x),
-            child: AddNewCardView(() {
-              navigationToAddNewCardPage(context);
-            }),
-          ),
-          const Spacer(),
-          Padding(
-            padding: const EdgeInsets.all(MARGIN_MEDIUM_2x),
-            child: FloatingLongButton(
-              () {
-                navigateToTicketPage(context);
-              },
-              buttonText: CONFIRM,
-              isNeedTransparentSpace: false,
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

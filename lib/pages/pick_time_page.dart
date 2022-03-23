@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:movie_booking_app/bloc/details_bloc.dart';
+import 'package:movie_booking_app/bloc/times_bloc.dart';
 import 'package:movie_booking_app/data/models/tmba_model.dart';
 import 'package:movie_booking_app/data/models/tmba_model_impl.dart';
 import 'package:movie_booking_app/data/vos/cinema_vo.dart';
@@ -14,175 +16,103 @@ import 'package:movie_booking_app/resources/string.dart';
 import 'package:movie_booking_app/widgets/back_button.dart';
 import 'package:movie_booking_app/widgets/floating_long_button.dart';
 import 'package:movie_booking_app/widgets/title_text.dart';
+import 'package:provider/provider.dart';
 
-class PickTimePage extends StatefulWidget {
+class PickTimePage extends StatelessWidget {
   final int movieId;
   final String moiveName;
 
   const PickTimePage({required this.movieId, required this.moiveName, Key? key})
       : super(key: key);
 
-  @override
-  State<PickTimePage> createState() => _PickTimePageState();
-}
-
-class _PickTimePageState extends State<PickTimePage> {
-  //Variables
-  TimeslotsVO selectedTimeslot = TimeslotsVO();
-  String selectedCinema = '';
-  int selectedCinemaId = 0;
-
-  //DateList
-  final List<DateVO> movieShowDateList =
-      List.generate(14, (index) => index).map((numberOfDays) {
-    return DateTime.now().add(Duration(days: numberOfDays));
-  }).map((dateTime) {
-    return DateVO(
-      date: DateFormat('yyyy-MM-dd').format(dateTime),
-      weekday: dateTime.weekday,
-      isSelected: false,
-    );
-  }).toList();
-
-  String getSelectedDate() {
-    String selectedDate = movieShowDateList
-        .where((date) => date.isSelected == true)
-        .toList()
-        .first
-        .date
-        .toString();
-    return selectedDate;
-  }
-
-  TmbaModel mTmbaModel = TmbaModelImpl();
-
-  //STATE VARIABLES
-  List<CinemaVO>? cinemaList;
-
-  @override
-  void initState() {
-    movieShowDateList.first.isSelected = true;
-    getCinemaList();
-    super.initState();
-  }
-
-  void getCinemaList() {
-    selectedTimeslot = TimeslotsVO();
-    selectedCinema = '';
-    selectedCinemaId = 0;
-//CinemaList
-    //Network
-    // mTmbaModel
-    //     .getCinemaDayTimeslot(widget.movieId.toString(), getSelectedDate())
-    //     .then((cinema) {
-    //   setState(() {
-    //     cinemaList = cinema?.cinemaList;
-    //   });
-    // }).catchError((error) => print(error));
-
-    //Database
-    mTmbaModel
-        .getCinemaDayTimeslotFromDatabase(
-            getSelectedDate(), widget.movieId.toString())
-        .listen((cinema) {
-      setState(() {
-        cinemaList = cinema?.cinemaList;
-      });
-    }).onError((error) => print(error));
-  }
-
-  void handleError(BuildContext context, dynamic error) {
-    if (error is DioError) {
-      try {
-        ErrorResponse errorResponse =
-            ErrorResponse.fromJson(error.response?.data);
-      } on Error catch (_) {}
-    } else {
-      print(error.toString());
-    }
-  }
-
-  void selectTimeslot(TimeslotsVO timeslot) {
-    selectedTimeslot = timeslot;
-
-    cinemaList?.forEach((cinema) {
-      setState(() {
-        cinema.makeAllTimeslotsChangeNotSelected();
-        cinema.searhAndSelectTimeslot(timeslot.cinemaDayTimeSlotId ?? 0);
-      });
-      if (cinema
-          .checkTimeslotContain(selectedTimeslot.cinemaDayTimeSlotId ?? 0)) {
-        selectedCinema = cinema.cinema ?? '';
-        selectedCinemaId = cinema.cinemaId ?? 0;
-      }
-    });
-  }
-
-  void navigatiorToSeatPage(BuildContext context) {
+  void navigatiorToSeatPage(
+      {required BuildContext context,
+      required TimeslotsVO selectedTimeslot,
+      required String date,
+      required String selectedCinema,
+      required int selectedCinemaId}) {
     if (selectedTimeslot.cinemaDayTimeSlotId != null) {
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => SeatPage(
-            date: getSelectedDate(),
-            movieName: widget.moiveName,
+            date: date,
+            movieName: moiveName,
             time: selectedTimeslot,
             cinema: selectedCinema,
-            movieId: widget.movieId,
+            movieId: movieId,
             cinemaId: selectedCinemaId,
           ),
         ),
       );
+      print(selectedCinema);
+      print(selectedTimeslot.startTime);
     }
-  }
-
-  void selectDate(int index) {
-    setState(() {
-      movieShowDateList.forEach((date) {
-        date.isSelected = false;
-      });
-      movieShowDateList[index].isSelected = true;
-      getCinemaList();
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          CustomScrollView(
-            slivers: [
-              CustomSliverAppBarView(
-                (index) => selectDate(index),
-                movieShowDateList: movieShowDateList,
+    return ChangeNotifierProvider(
+        create: (context) => TimeBloc(movieId),
+        child: Selector<TimeBloc, List<DateVO>?>(
+          selector: (context, bloc) => bloc.movieShowDateList,
+          builder: (context, movieShowDateList, child) =>
+              Selector<TimeBloc, List<CinemaVO>?>(
+            selector: (context, bloc) => bloc.cinemaList,
+            shouldRebuild: (previous, next) => previous != next,
+            builder: (context, cinemaList, child) {
+              TimeBloc bloc = Provider.of<TimeBloc>(context, listen: false);
+              return Scaffold(
+              backgroundColor: Colors.white,
+              body: Stack(
+                children: [
+                  CustomScrollView(
+                    slivers: [
+                      CustomSliverAppBarView(
+                        (index) {
+                          TimeBloc bloc =
+                              Provider.of<TimeBloc>(context, listen: false);
+                          bloc.selectDate(index);
+                        },
+                        movieShowDateList: movieShowDateList ?? [],
+                      ),
+                      SliverList(
+                        delegate: SliverChildListDelegate(
+                          [
+                            ChoseMovieTypeAndTimeSectionView((timeslot) {
+                              TimeBloc bloc =
+                                  Provider.of<TimeBloc>(context, listen: false);
+                              bloc.selectTimeslot(timeslot);
+                              print('send trigger');
+                            }, movieTimeList: cinemaList ?? []),
+                            const SizedBox(
+                              height: SPACE_FOR_FLOATING_LONG_BUTTON,
+                            )
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: MARGIN_MEDIUM_2x),
+                      child: FloatingLongButton(() {
+                        navigatiorToSeatPage(
+                            context: context,
+                            date: bloc.getSelectedDate(),
+                            selectedCinema: bloc.getSelectedCinema(),
+                            selectedCinemaId: bloc.getSelectedCinemaId(),
+                            selectedTimeslot: bloc.getSelectedTimeslot());
+                      }, buttonText: NEXT),
+                    ),
+                  ),
+                ],
               ),
-              SliverList(
-                delegate: SliverChildListDelegate(
-                  [
-                    ChoseMovieTypeAndTimeSectionView(
-                        (timeslot) => selectTimeslot(timeslot),
-                        movieTimeList: cinemaList ?? []),
-                    const SizedBox(
-                      height: SPACE_FOR_FLOATING_LONG_BUTTON,
-                    )
-                  ],
-                ),
-              )
-            ],
+            );
+            }
           ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: MARGIN_MEDIUM_2x),
-              child: FloatingLongButton(() {
-                navigatiorToSeatPage(context);
-              }, buttonText: NEXT),
-            ),
-          ),
-        ],
-      ),
-    );
+        ));
   }
 }
 

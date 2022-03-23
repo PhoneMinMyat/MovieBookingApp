@@ -29,4 +29,17 @@ class PaymentMethodVO {
   factory PaymentMethodVO.fromJson(Map<String, dynamic> json) =>
       _$PaymentMethodVOFromJson(json);
   Map<String, dynamic> toJson() => _$PaymentMethodVOToJson(this);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+  
+    return other is PaymentMethodVO &&
+      other.id == id &&
+      other.name == name &&
+      other.description == description;
+  }
+
+  @override
+  int get hashCode => id.hashCode ^ name.hashCode ^ description.hashCode;
 }

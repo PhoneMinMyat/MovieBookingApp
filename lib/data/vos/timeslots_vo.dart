@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import 'package:json_annotation/json_annotation.dart';
+
 import 'package:movie_booking_app/persistence/hive_constants.dart';
 
 part 'timeslots_vo.g.dart';
@@ -38,4 +39,17 @@ class TimeslotsVO {
       _$TimeslotsVOFromJson(json);
 
   Map<String, dynamic> toJson() => _$TimeslotsVOToJson(this);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+  
+    return other is TimeslotsVO &&
+      other.cinemaDayTimeSlotId == cinemaDayTimeSlotId &&
+      other.startTime == startTime &&
+      other.isSelected == isSelected;
+  }
+
+  @override
+  int get hashCode => cinemaDayTimeSlotId.hashCode ^ startTime.hashCode ^ isSelected.hashCode;
 }

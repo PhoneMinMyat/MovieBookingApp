@@ -137,7 +137,10 @@ class RetrofitTmbaDataAgentImpl extends TmbaDataAgent {
       String token, CheckOutRequest checkOutRequest) {
     return _tmbaApi
         .postCheckout(token, checkOutRequest)
-        .then((response) => response.data);
+        .then((response) {
+          print('Response Checkout ===> ${response.toString()}');
+return response.data;
+        } );
   }
 
   

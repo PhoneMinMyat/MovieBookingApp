@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'package:movie_booking_app/data/vos/snack_vo.dart';
@@ -69,5 +70,42 @@ class CheckoutVO {
   @override
   String toString() {
     return 'CheckoutVO(id: $id, bookingNo: $bookingNo, bookingDate: $bookingDate, row: $row, seat: $seat, totalSeat: $totalSeat, total: $total, movieId: $movieId, cinemaId: $cinemaId, username: $username, timeslot: $timeslot, snacks: $snacks, qrCode: $qrCode)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+  
+    return other is CheckoutVO &&
+      other.id == id &&
+      other.bookingNo == bookingNo &&
+      other.bookingDate == bookingDate &&
+      other.row == row &&
+      other.seat == seat &&
+      other.totalSeat == totalSeat &&
+      other.total == total &&
+      other.movieId == movieId &&
+      other.cinemaId == cinemaId &&
+      other.username == username &&
+      other.timeslot == timeslot &&
+      listEquals(other.snacks, snacks) &&
+      other.qrCode == qrCode;
+  }
+
+  @override
+  int get hashCode {
+    return id.hashCode ^
+      bookingNo.hashCode ^
+      bookingDate.hashCode ^
+      row.hashCode ^
+      seat.hashCode ^
+      totalSeat.hashCode ^
+      total.hashCode ^
+      movieId.hashCode ^
+      cinemaId.hashCode ^
+      username.hashCode ^
+      timeslot.hashCode ^
+      snacks.hashCode ^
+      qrCode.hashCode;
   }
 }

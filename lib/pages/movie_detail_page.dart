@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:movie_booking_app/bloc/details_bloc.dart';
 import 'package:movie_booking_app/data/models/the_move_db_model.dart';
 import 'package:movie_booking_app/data/models/the_move_db_model_impl.dart';
 import 'package:movie_booking_app/data/vos/actor_vo.dart';
@@ -13,132 +14,103 @@ import 'package:movie_booking_app/widgets/back_button.dart';
 import 'package:movie_booking_app/widgets/floating_long_button.dart';
 import 'package:movie_booking_app/widgets/header_text.dart';
 import 'package:movie_booking_app/widgets/subtitle_text.dart';
+import 'package:provider/provider.dart';
 
-class MovieDetailPage extends StatefulWidget {
+class MovieDetailPage extends StatelessWidget {
   final int movieId;
   const MovieDetailPage({required this.movieId, Key? key}) : super(key: key);
-
-  @override
-  State<MovieDetailPage> createState() => _MovieDetailPageState();
-}
-
-class _MovieDetailPageState extends State<MovieDetailPage> {
-  final TheMovieDbModel _mMovieModel = TheMovieDbModelImpl();
-  //StateVariable
-  MovieVO? movie;
-  List<ActorVO>? actorList;
-
-  @override
-  void initState() {
-    //Movie
-    //Network
-    // _mMovieModel.getMovieDetails(widget.movieId)?.then((movie) {
-    //   setState(() {
-    //     this.movie = movie;
-    //   });
-    // }).catchError((error) => print(error));
-
-    //Database
-    _mMovieModel.getMovieDetailsFromDatabase(widget.movieId).listen((movie) {
-      setState(() {
-        this.movie = movie;
-      });
-    }).onError((error) => print(error));
-
-    //ActorList
-    //Network
-    // _mMovieModel.getCreditsByMovie(widget.movieId).then((actorList) {
-    //   setState(() {
-    //     this.actorList = actorList;
-    //   });
-    // }).catchError((error) => print(error));
-
-    //Database
-    _mMovieModel
-        .getCreditsByMovieFromDatabase(widget.movieId)
-        .listen((actorList) {
-      setState(() {
-        this.actorList = actorList;
-      });
-    }).onError((error) => print(error));
-    super.initState();
-  }
 
   void popMovieDetailScreen(BuildContext context) {
     Navigator.pop(context);
   }
 
-  void navigateToPickTimePage(BuildContext context) {
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (context) =>  PickTimePage(movieId: widget.movieId, moiveName: movie?.title ?? '',)));
+  void navigateToPickTimePage(
+      BuildContext context, int movieId, String movieTitle) {
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) => PickTimePage(
+              movieId: movieId,
+              moiveName: movieTitle,
+            )));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          CustomScrollView(
-            slivers: [
-              CustomAppBarSectionView(
-                () {
-                  popMovieDetailScreen(context);
-                },
-                imageUrl: movie?.backdropPath ?? '',
+    return ChangeNotifierProvider(
+      create: (context) => DetailsBloc(movieId),
+      child: Selector<DetailsBloc, MovieVO?>(
+        selector: (context, bloc) => bloc.movie,
+        builder: (context, movie, child) => Scaffold(
+          backgroundColor: Colors.white,
+          body: Stack(
+            children: [
+              CustomScrollView(
+                slivers: [
+                  CustomAppBarSectionView(
+                    () {
+                      popMovieDetailScreen(context);
+                    },
+                    imageUrl: movie?.backdropPath ?? '',
+                  ),
+                  SliverList(
+                    delegate: SliverChildListDelegate(
+                      [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: MARGIN_MEDIUM_2x),
+                          width: double.infinity,
+                          child: TrailerSection(
+                            movie: movie ?? MovieVO(),
+                          ),
+                        ),
+                        const SizedBox(
+                          height: MARGIN_MEDIUM_2x,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: MARGIN_MEDIUM_2x),
+                          child: PlotSummarySectionView(
+                            plotText: movie?.overview ?? '',
+                          ),
+                        ),
+                        const SizedBox(
+                          height: MARGIN_MEDIUM_2x,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: MARGIN_MEDIUM_2x),
+                          child: Selector<DetailsBloc, List<ActorVO>?>(
+                            selector: (context, bloc) => bloc.actorList,
+                            builder: (context, actorList, child) =>
+                                CastSectionView(
+                              actorList: actorList ?? [],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(
+                          height: SPACE_FOR_FLOATING_LONG_BUTTON,
+                        )
+                      ],
+                    ),
+                  )
+                ],
               ),
-              SliverList(
-                delegate: SliverChildListDelegate(
-                  [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: MARGIN_MEDIUM_2x),
-                      width: double.infinity,
-                      child: TrailerSection(
-                        movie: movie ?? MovieVO(),
-                      ),
-                    ),
-                    const SizedBox(
-                      height: MARGIN_MEDIUM_2x,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: MARGIN_MEDIUM_2x),
-                      child: PlotSummarySectionView(
-                        plotText: movie?.overview ?? '',
-                      ),
-                    ),
-                    const SizedBox(
-                      height: MARGIN_MEDIUM_2x,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: MARGIN_MEDIUM_2x),
-                      child: CastSectionView(
-                        actorList: actorList ?? [],
-                      ),
-                    ),
-                    const SizedBox(
-                      height: SPACE_FOR_FLOATING_LONG_BUTTON,
-                    )
-                  ],
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: MARGIN_MEDIUM_2x),
+                  child: FloatingLongButton(
+                    () {
+                      navigateToPickTimePage(
+                          context, movie?.id ?? 0, movie?.title ?? '');
+                    },
+                    buttonText: DETAILS_PAGE_GET_YOUR_TICKET_BUTTON,
+                  ),
                 ),
               )
             ],
           ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: MARGIN_MEDIUM_2x),
-              child: FloatingLongButton(
-                () {
-                  navigateToPickTimePage(context);
-                },
-                buttonText: DETAILS_PAGE_GET_YOUR_TICKET_BUTTON,
-              ),
-            ),
-          )
-        ],
+        ),
       ),
     );
   }

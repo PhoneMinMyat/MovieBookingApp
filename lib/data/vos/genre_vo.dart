@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import 'package:json_annotation/json_annotation.dart';
+
 import 'package:movie_booking_app/persistence/hive_constants.dart';
 
 part 'genre_vo.g.dart';
@@ -26,4 +27,16 @@ class GenreVO {
 
   @override
   String toString() => 'GenreVO(id: $id, name: $name)';
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+  
+    return other is GenreVO &&
+      other.id == id &&
+      other.name == name;
+  }
+
+  @override
+  int get hashCode => id.hashCode ^ name.hashCode;
 }

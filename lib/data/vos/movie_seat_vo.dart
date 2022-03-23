@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+
 import 'package:movie_booking_app/utils/constraints.dart';
 
 part 'movie_seat_vo.g.dart';
@@ -48,5 +49,28 @@ class MovieSeatVO {
 
   bool isMovieSeatEmpty() {
     return type == SEAT_TYPE_EMPTY;
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+  
+    return other is MovieSeatVO &&
+      other.id == id &&
+      other.type == type &&
+      other.seatName == seatName &&
+      other.symbol == symbol &&
+      other.price == price &&
+      other.isSelected == isSelected;
+  }
+
+  @override
+  int get hashCode {
+    return id.hashCode ^
+      type.hashCode ^
+      seatName.hashCode ^
+      symbol.hashCode ^
+      price.hashCode ^
+      isSelected.hashCode;
   }
 }

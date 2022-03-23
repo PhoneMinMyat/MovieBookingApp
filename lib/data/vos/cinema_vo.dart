@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -21,28 +22,34 @@ class CinemaVO {
   @HiveField(2)
   List<TimeslotsVO>? timeslots;
 
-  @HiveField(3)
-  List<String>? dates;
+
 
   CinemaVO({
     this.cinemaId,
     this.cinema,
     this.timeslots,
-    this.dates
   });
 
   void makeAllTimeslotsChangeNotSelected() {
-    timeslots?.forEach((timeslots) {
-      timeslots.isSelected = false;
-    });
+    List<TimeslotsVO> tempTimeslots = timeslots?.map((timeslot) {
+      TimeslotsVO tempTimeslot = timeslot;
+      tempTimeslot.isSelected = false;
+      return tempTimeslot;
+    }).toList() ?? [];
+    
+    timeslots = tempTimeslots;
   }
 
   void searhAndSelectTimeslot(int timeslotId) {
-    timeslots?.forEach((timeslot) {
-      if (timeslot.cinemaDayTimeSlotId == timeslotId) {
-        timeslot.isSelected = true;
+    List<TimeslotsVO> tempTimeslots = timeslots?.map((timeslot) {
+      TimeslotsVO tempTimeslot = timeslot;
+      if(tempTimeslot.cinemaDayTimeSlotId == timeslotId){
+        tempTimeslot.isSelected = true;
       }
-    });
+      return tempTimeslot;
+    }).toList() ?? [];
+    
+    timeslots = tempTimeslots;
   }
 
   bool checkTimeslotContain(int timeslotId){
@@ -54,9 +61,24 @@ class CinemaVO {
     });
     return status;
   }
+
+  
   
   factory CinemaVO.fromJson(Map<String, dynamic> json) =>
       _$CinemaVOFromJson(json);
 
   Map<String, dynamic> toJson() => _$CinemaVOToJson(this);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+  
+    return other is CinemaVO &&
+      other.cinemaId == cinemaId &&
+      other.cinema == cinema &&
+      listEquals(other.timeslots, timeslots);
+  }
+
+  @override
+  int get hashCode => cinemaId.hashCode ^ cinema.hashCode ^ timeslots.hashCode;
 }

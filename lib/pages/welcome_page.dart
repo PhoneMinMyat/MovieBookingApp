@@ -12,7 +12,7 @@ class WelcomePage extends StatelessWidget {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) {
-          return const LogInPage();
+          return  LogInPage();
         },
       ),
     );

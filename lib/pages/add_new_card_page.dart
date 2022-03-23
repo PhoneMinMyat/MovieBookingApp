@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:movie_booking_app/bloc/new_card_bloc.dart';
 import 'package:movie_booking_app/data/models/tmba_model.dart';
 import 'package:movie_booking_app/data/models/tmba_model_impl.dart';
 import 'package:movie_booking_app/network/responses/error_response.dart';
@@ -10,6 +11,7 @@ import 'package:movie_booking_app/resources/string.dart';
 import 'package:movie_booking_app/viewitems/simple_appbar_view.dart';
 import 'package:movie_booking_app/widgets/floating_long_button.dart';
 import 'package:movie_booking_app/widgets/normal_text.dart';
+import 'package:provider/provider.dart';
 
 class AddNewCardPage extends StatefulWidget {
   const AddNewCardPage({Key? key}) : super(key: key);
@@ -26,17 +28,22 @@ class _AddNewCardPageState extends State<AddNewCardPage> {
 
   //Modal
  final TmbaModel _tmbaModel = TmbaModelImpl();
-  void createCard() {
+  void createCard(NewCardBloc bloc) {
     if (cardNumberController.text.isNotEmpty &&
         cardHolderController.text.isNotEmpty &&
         expirationController.text.isNotEmpty &&
         cvcController.text.isNotEmpty) {
-      _tmbaModel
-          .postCreateCard(cardNumberController.text, cardHolderController.text,
-              expirationController.text, cvcController.text)
+       bloc
+          .createCard(
+              cardNumber: cardNumberController.text,
+              cardHolder: cardHolderController.text,
+              expiration: expirationController.text,
+              cvc: cvcController.text)
           .then((value) {
-        Navigator.pop(context);
-      }).catchError((error) => handleError(context, error));
+            bloc.getProfile();
+            Navigator.pop(context);
+          })
+          .catchError((error) => print(error));
     } else {
       handleError(context, 'Please Fill All The Fields');
     }
@@ -74,65 +81,72 @@ class _AddNewCardPageState extends State<AddNewCardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const SimpleAppBarView(),
-      body: Container(
-        color: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: MARGIN_MEDIUM_2x),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextFieldWithHeaderView(
-              labelText: ADD_CARD_NUMBER,
-              keyboardType: TextInputType.number,
-              controller: cardNumberController,
-              hintText: '123456789876543',
-            ),
-            const SizedBox(
-              height: MARGIN_MEDIUM_3x,
-            ),
-            TextFieldWithHeaderView(
-              labelText: ADD_CARD_HOLDER,
-              controller: cardHolderController,
-              hintText: 'John',
-            ),
-            const SizedBox(
-              height: MARGIN_MEDIUM_3x,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: (MediaQuery.of(context).size.width * 0.4),
-                  child: TextFieldWithHeaderView(
-                    labelText: ADD_EXPIRATION_DATE,
-                    keyboardType: TextInputType.datetime,
-                    controller: expirationController,
-                    hintText: '08/21',
+    return ChangeNotifierProvider(
+      create: (context) => NewCardBloc(),
+      builder: (context, child) {
+        NewCardBloc bloc = Provider.of<NewCardBloc>(context, listen: false);
+        return Scaffold(
+        appBar: const SimpleAppBarView(),
+        body: Container(
+          color: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: MARGIN_MEDIUM_2x),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextFieldWithHeaderView(
+                labelText: ADD_CARD_NUMBER,
+                keyboardType: TextInputType.number,
+                controller: cardNumberController,
+                hintText: '123456789876543',
+              ),
+              const SizedBox(
+                height: MARGIN_MEDIUM_3x,
+              ),
+              TextFieldWithHeaderView(
+                labelText: ADD_CARD_HOLDER,
+                controller: cardHolderController,
+                hintText: 'John',
+              ),
+              const SizedBox(
+                height: MARGIN_MEDIUM_3x,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: (MediaQuery.of(context).size.width * 0.4),
+                    child: TextFieldWithHeaderView(
+                      labelText: ADD_EXPIRATION_DATE,
+                      keyboardType: TextInputType.datetime,
+                      controller: expirationController,
+                      hintText: '08/21',
+                    ),
                   ),
-                ),
-                SizedBox(
-                  width: (MediaQuery.of(context).size.width * 0.4),
-                  child: TextFieldWithHeaderView(
-                    labelText: ADD_CVC,
-                    keyboardType: TextInputType.number,
-                    hintText: '123',
-                    controller: cvcController,
+                  SizedBox(
+                    width: (MediaQuery.of(context).size.width * 0.4),
+                    child: TextFieldWithHeaderView(
+                      labelText: ADD_CVC,
+                      keyboardType: TextInputType.number,
+                      hintText: '123',
+                      controller: cvcController,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const Spacer(),
-            FloatingLongButton(
-              () {
-                createCard();
-              },
-              buttonText: CONFIRM,
-            ),
-          ],
+                ],
+              ),
+              const Spacer(),
+              FloatingLongButton(
+                () {
+                  
+                  createCard(bloc);
+                },
+                buttonText: CONFIRM,
+              ),
+            ],
+          ),
         ),
-      ),
+      );
+      },
     );
   }
 }

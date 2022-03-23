@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
+
 import 'package:movie_booking_app/data/vos/cinema_vo.dart';
 import 'package:movie_booking_app/persistence/hive_constants.dart';
 
@@ -11,4 +13,15 @@ class CinemaListVO {
   CinemaListVO({
     this.cinemaList,
   });
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+  
+    return other is CinemaListVO &&
+      listEquals(other.cinemaList, cinemaList);
+  }
+
+  @override
+  int get hashCode => cinemaList.hashCode;
 }

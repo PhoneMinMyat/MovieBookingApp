@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import 'package:json_annotation/json_annotation.dart';
+
 import 'package:movie_booking_app/persistence/hive_constants.dart';
 
 part 'country_vo.g.dart';
@@ -23,4 +24,16 @@ class CountryVO {
       _$CountryVOFromJson(json);
 
   Map<String, dynamic> toJson() => _$CountryVOToJson(this);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+  
+    return other is CountryVO &&
+      other.iso3166 == iso3166 &&
+      other.name == name;
+  }
+
+  @override
+  int get hashCode => iso3166.hashCode ^ name.hashCode;
 }

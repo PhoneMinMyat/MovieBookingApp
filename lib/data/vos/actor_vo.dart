@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:json_annotation/json_annotation.dart';
+
 import 'package:movie_booking_app/data/vos/movie_vo.dart';
 import 'package:movie_booking_app/persistence/hive_constants.dart';
 
@@ -83,5 +85,44 @@ class ActorVO {
   @override
   String toString() {
     return 'ActorVO(adult: $adult, gender: $gender, id: $id, knownFor: $knownFor, knownForDepartment: $knownForDepartment, name: $name, popularity: $popularity, profilePath: $profilePath, originalName: $originalName, castId: $castId, character: $character, creditId: $creditId, order: $order)';
+  }
+
+  
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+  
+    return other is ActorVO &&
+      other.adult == adult &&
+      other.gender == gender &&
+      other.id == id &&
+      listEquals(other.knownFor, knownFor) &&
+      other.knownForDepartment == knownForDepartment &&
+      other.name == name &&
+      other.popularity == popularity &&
+      other.profilePath == profilePath &&
+      other.originalName == originalName &&
+      other.castId == castId &&
+      other.character == character &&
+      other.creditId == creditId &&
+      other.order == order;
+  }
+
+  @override
+  int get hashCode {
+    return adult.hashCode ^
+      gender.hashCode ^
+      id.hashCode ^
+      knownFor.hashCode ^
+      knownForDepartment.hashCode ^
+      name.hashCode ^
+      popularity.hashCode ^
+      profilePath.hashCode ^
+      originalName.hashCode ^
+      castId.hashCode ^
+      character.hashCode ^
+      creditId.hashCode ^
+      order.hashCode;
   }
 }

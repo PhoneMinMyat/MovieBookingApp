@@ -1,7 +1,7 @@
 import 'package:hive/hive.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:movie_booking_app/persistence/hive_constants.dart';
 
+import 'package:movie_booking_app/persistence/hive_constants.dart';
 
 part 'collection_vo.g.dart';
 
@@ -35,4 +35,23 @@ class CollectionVO {
    Map<String, dynamic> toJson() => _$CollectionVOToJson(this);
 
  
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+  
+    return other is CollectionVO &&
+      other.id == id &&
+      other.name == name &&
+      other.posterPath == posterPath &&
+      other.backdropPath == backdropPath;
+  }
+
+  @override
+  int get hashCode {
+    return id.hashCode ^
+      name.hashCode ^
+      posterPath.hashCode ^
+      backdropPath.hashCode;
+  }
 }

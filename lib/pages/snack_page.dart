@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:movie_booking_app/bloc/snack_bloc.dart';
 import 'package:movie_booking_app/data/models/tmba_model.dart';
 import 'package:movie_booking_app/data/models/tmba_model_impl.dart';
 import 'package:movie_booking_app/data/vos/payment_method_vo.dart';
@@ -14,8 +15,9 @@ import 'package:movie_booking_app/viewitems/simple_appbar_view.dart';
 import 'package:movie_booking_app/widgets/floating_long_button.dart';
 import 'package:movie_booking_app/widgets/normal_text.dart';
 import 'package:movie_booking_app/widgets/subtitle_text.dart';
+import 'package:provider/provider.dart';
 
-class SnackPage extends StatefulWidget {
+class SnackPage extends StatelessWidget {
   final String selectdSeatName;
   final double seatPrice;
   final String bookingDate;
@@ -35,121 +37,91 @@ class SnackPage extends StatefulWidget {
     required this.cinemaId,
   }) : super(key: key);
 
-  @override
-  State<SnackPage> createState() => _SnackPageState();
-}
-
-class _SnackPageState extends State<SnackPage> {
-  //Model
-  TmbaModel _tmbaModel = TmbaModelImpl();
-
-  //State Variables
-  List<SnackVO>? snackList;
-  List<PaymentMethodVO>? paymentMethodList;
-
-  @override
-  void initState() {
-    //Snack
-    _tmbaModel.getSnackListFromDatabase().listen((snackListFromDB) {
-      setState(() {
-        snackList = snackListFromDB;
-      });
-    }).onError((error) => print(error));
-
-    //PaymentMethod
-    _tmbaModel.getPaymentMethodFromDatabase().listen((paymentListFromDB) {
-      setState(() {
-        paymentMethodList = paymentListFromDB;
-      });
-    }).onError((error) => print(error.toString()));
-
-    super.initState();
-  }
-
-  void increaseCounter(int snackId) {
-    setState(() {
-      snackList?.firstWhere((snack) => snack.id == snackId).increaseQty();
-    });
-  }
-
-  void decreaseCounter(int snackId) {
-    setState(() {
-      snackList?.firstWhere((snack) => snack.id == snackId).decreaseQty();
-    });
-  }
-
-  double getTotalSnackPrice() {
-    double total = 0;
-    snackList?.forEach((snack) {
-      total += snack.getTotalPrice();
-    });
-    return total;
-  }
-
-  List<SnackVO> getSelectedSnackList(){
-    List<SnackVO> selectedSnack = snackList?.where((snack) => snack.quantity !> 0).toList() ?? [];
-
-    return selectedSnack;
-  }
-
-  void navigateToPaymentPage(BuildContext context) {
+  void navigateToPaymentPage(
+      {required BuildContext context,
+      required double totalSnackPrice,
+      required List<SnackVO> selectedSnackList}) {
     Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) =>  PaymentPage(
-                  selectdSeatName: widget.selectdSeatName,
-                  bookingDate: widget.bookingDate,
-                  cinemaDayTimeslotId: widget.cinemaDayTimeslotId,
-                  row: widget.row,
-                  movieId: widget.movieId,
-                  cinemaId: widget.cinemaId,
-                  subTotal: widget.seatPrice + getTotalSnackPrice(),
-                  selectedSnackList: getSelectedSnackList(),
+            builder: (context) => PaymentPage(
+                  selectdSeatName: selectdSeatName,
+                  bookingDate: bookingDate,
+                  cinemaDayTimeslotId: cinemaDayTimeslotId,
+                  row: row,
+                  movieId: movieId,
+                  cinemaId: cinemaId,
+                  subTotal: seatPrice + totalSnackPrice,
+                  selectedSnackList: selectedSnackList,
                 )));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const SimpleAppBarView(),
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: MARGIN_MEDIUM_2x),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ComboSectionView(
-                (snackId) {
-                  decreaseCounter(snackId);
-                },
-                (snackId) {
-                  increaseCounter(snackId);
-                },
-                snackList: snackList ?? [],
+    return ChangeNotifierProvider(
+      create: (context) => SnackBloc(),
+      child: Selector<SnackBloc, double>(
+          selector: (context, bloc) => bloc.totalPrice,
+          builder: (context, totalPrice, child) {
+            SnackBloc bloc = Provider.of<SnackBloc>(context, listen: false);
+            return Scaffold(
+              appBar: const SimpleAppBarView(),
+              backgroundColor: Colors.white,
+              body: SingleChildScrollView(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: MARGIN_MEDIUM_2x),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Selector<SnackBloc, List<SnackVO>?>(
+                        selector: (context, bloc) => bloc.snackList,
+                        builder: (context, snackList, child) =>
+                            ComboSectionView(
+                          (snackId) {
+                            SnackBloc bloc =
+                                Provider.of<SnackBloc>(context, listen: false);
+                            bloc.decreaseCounter(snackId);
+                          },
+                          (snackId) {
+                            SnackBloc bloc =
+                                Provider.of<SnackBloc>(context, listen: false);
+                            bloc.increaseCounter(snackId);
+                          },
+                          snackList: snackList ?? [],
+                        ),
+                      ),
+                      const PromoCodeSectionView(),
+                      const SizedBox(height: MARGIN_MEDIUM_2x),
+                      SubTotalText(
+                        totalAmount: seatPrice + totalPrice,
+                      ),
+                      const SizedBox(height: MARGIN_MEDIUM_2x),
+                      Selector<SnackBloc, List<PaymentMethodVO>?>(
+                        selector: (context, bloc) => bloc.paymentMethodList,
+                        builder: (context, paymentMethodList, child) =>
+                            PaymentMethodSectionView(
+                          paymentMethodList: paymentMethodList ?? [],
+                        ),
+                      ),
+                      const SizedBox(
+                        height: MARGIN_MEDIUM_2x,
+                      ),
+                      FloatingLongButton(
+                        () {
+                          navigateToPaymentPage(
+                              context: context,
+                              selectedSnackList: bloc.getSelectedSnackList(),
+                              totalSnackPrice: totalPrice);
+                        },
+                        buttonText: CONFIRM,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const PromoCodeSectionView(),
-              const SizedBox(height: MARGIN_MEDIUM_2x),
-              SubTotalText(
-                totalAmount: widget.seatPrice + getTotalSnackPrice(),
-              ),
-              const SizedBox(height: MARGIN_MEDIUM_2x),
-              PaymentMethodSectionView(
-                paymentMethodList: paymentMethodList ?? [],
-              ),
-              const SizedBox(
-                height: MARGIN_MEDIUM_2x,
-              ),
-              FloatingLongButton(
-                () {
-                  navigateToPaymentPage(context);
-                },
-                buttonText: CONFIRM,
-              ),
-            ],
-          ),
-        ),
-      ),
+            );
+          }),
     );
   }
 }

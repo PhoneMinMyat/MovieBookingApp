@@ -67,7 +67,9 @@ class TmbaModelImpl implements TmbaModel {
   @override
   void getProfile() {
     _tmbaDataAgent.getProfile(getBearerToken()).then((profile) {
-      _mProfileDao.saveProfile(profile);
+      ProfileVO tempProfile = profile;
+      tempProfile.token = _mProfileDao.getProfile().token ?? '';
+      _mProfileDao.saveProfile(tempProfile);
     });
   }
 
@@ -181,7 +183,8 @@ class TmbaModelImpl implements TmbaModel {
   }
 
   @override
-  Stream<CinemaListVO?> getCinemaDayTimeslotFromDatabase(String date, String movieId) {
+  Stream<CinemaListVO?> getCinemaDayTimeslotFromDatabase(
+      String date, String movieId) {
     getCinemaDayTimeslot(movieId, date);
     return _mCinemaDao
         .getCinemaListEventStream()
@@ -200,6 +203,7 @@ class TmbaModelImpl implements TmbaModel {
 
   @override
   Stream<List<PaymentMethodVO>?> getPaymentMethodFromDatabase() {
+    getSnackList();
     return _mPaymentDao
         .getPaymentMethodEventStream()
         .startWith(_mPaymentDao.getPaymentMethodStream())

@@ -16,7 +16,9 @@ class TheMovieDbModelImpl implements TheMovieDbModel {
     return _singleton;
   }
 
-  TheMovieDbModelImpl._internal();
+  TheMovieDbModelImpl._internal() {
+    getGenresFromDatabase();
+  }
 
   //Daos
   ActorDao mActorDao = ActorDao();
@@ -112,6 +114,7 @@ class TheMovieDbModelImpl implements TheMovieDbModel {
   //DAO
   @override
   Future<List<GenreVO>?> getGenresFromDatabase() {
+    getGenres();
     return Future.value(mGenreDao.getAllGenres());
   }
 
