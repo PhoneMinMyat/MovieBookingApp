@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:movie_booking_app/resources/color.dart';
 import 'package:movie_booking_app/resources/dimens.dart';
+import 'package:movie_booking_app/widget_keys.dart';
 
 class Counter extends StatefulWidget {
   final Function() increaseCount;
   final Function() decreaseCount;
   final int count;
+  final String snackName;
 
   const Counter(this.decreaseCount, this.increaseCount,
-      {required this.count, Key? key})
+      {required this.count,required ,required this.snackName, Key? key})
       : super(key: key);
 
   @override
@@ -27,14 +29,14 @@ class _CounterState extends State<Counter> {
           ClickButton(
             () {
               widget.decreaseCount();
-            },
+            },key: Key(widget.snackName+KEY_SNACK_DECREASE),
           ),
           NumberView(number: widget.count.toString()),
           ClickButton(
             () {
               widget.increaseCount();
             },
-            isPlus: true,
+            isPlus: true,key: Key(widget.snackName+KEY_SNACK_INCREASE),
           ),
         ],
       ),

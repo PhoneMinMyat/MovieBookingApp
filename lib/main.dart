@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:movie_booking_app/bloc/my_app_bloc.dart';
-import 'package:movie_booking_app/data/models/tmba_model.dart';
-import 'package:movie_booking_app/data/models/tmba_model_impl.dart';
 import 'package:movie_booking_app/data/vos/actor_vo.dart';
 import 'package:movie_booking_app/data/vos/card_vo.dart';
 import 'package:movie_booking_app/data/vos/cinema_list_vo.dart';

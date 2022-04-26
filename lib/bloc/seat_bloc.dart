@@ -4,8 +4,11 @@ import 'package:movie_booking_app/data/models/tmba_model_impl.dart';
 import 'package:movie_booking_app/data/vos/movie_seat_vo.dart';
 
 class SeatBloc extends ChangeNotifier {
+  //Variables
+  bool isDispose = false;
+
   //Models
-  final TmbaModel _mTmbaModel = TmbaModelImpl();
+  TmbaModel _mTmbaModel = TmbaModelImpl();
 
 //STATE VARIABLES
   List<MovieSeatVO>? seatingList;
@@ -14,28 +17,36 @@ class SeatBloc extends ChangeNotifier {
   double price = 0;
   Set<String>? selectedRow;
 
-  SeatBloc(String timeslotId, String date) {
+  List<String>? tempSelectedRowAsList;
+
+  SeatBloc(String timeslotId, String date, [TmbaModel? tmbaModel]) {
+    if (tmbaModel != null) {
+      _mTmbaModel = tmbaModel;
+    }
     selectedSeat = [];
     price = 0;
     selectedRow = {};
     //Seating List
     _mTmbaModel.getCinemaSeatingPlan(timeslotId, date).then((seatList) {
       seatingList = seatList;
-      notifyListeners();
+      seatingList?.forEach((seat) => print(seat.id));
+      safeNotifyListeners();
     }).catchError((error) => print(error));
   }
 
   void selectSeat(MovieSeatVO seat) {
+    print(seat.id);
+    print(seat.seatName);
     MovieSeatVO tempSelectedSeat =
-        seatingList?.firstWhere((seatFromList) => seatFromList == seat) ??
+        seatingList?.firstWhere((seatFromList) => seatFromList.id == seat.id && seatFromList.seatName == seat.seatName) ??
             MovieSeatVO();
 
-    print(tempSelectedSeat.seatName);
     List<MovieSeatVO> tempSeatingList =
         seatingList?.map((seat) => seat).toList() ?? [];
     List<String> tempSelectedSeatList =
         selectedSeat?.map((seatName) => seatName).toList() ?? [];
-    Set<String> tempSelectedRow = selectedRow?.map((row) => row).toSet() ?? {};
+    List<String> tempSelectedRow = tempSelectedRowAsList ?? [];
+
     if (tempSelectedSeat.isSelected == true) {
       tempSeatingList
           .firstWhere((seatFromList) => seatFromList == tempSelectedSeat)
@@ -45,7 +56,7 @@ class SeatBloc extends ChangeNotifier {
 
       seatingList = tempSeatingList;
       selectedSeat = tempSelectedSeatList;
-      selectedRow = tempSelectedRow;
+      tempSelectedRowAsList = tempSelectedRow;
 
       price -= seat.price ?? 0;
     } else {
@@ -59,12 +70,12 @@ class SeatBloc extends ChangeNotifier {
 
         seatingList = tempSeatingList;
         selectedSeat = tempSelectedSeatList;
-        selectedRow = tempSelectedRow;
+        tempSelectedRowAsList = tempSelectedRow;
 
         price += seat.price ?? 0;
       }
     }
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   int getSeatColumnCount() {
@@ -78,10 +89,23 @@ class SeatBloc extends ChangeNotifier {
   }
 
   String getSelectedRowAsFormattedString() {
+    selectedRow = tempSelectedRowAsList?.toSet();
     return selectedRow?.toList().join(',') ?? '';
   }
 
   String getSelectedSeatAsFormattedString() {
     return selectedSeat?.toList().join(',') ?? '';
+  }
+
+  void safeNotifyListeners() {
+    if (isDispose == false) {
+      notifyListeners();
+    }
+  }
+
+  void makeDispose() {
+    if (isDispose == false) {
+      isDispose = true;
+    }
   }
 }

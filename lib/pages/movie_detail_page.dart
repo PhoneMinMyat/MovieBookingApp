@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:movie_booking_app/bloc/details_bloc.dart';
-import 'package:movie_booking_app/data/models/the_move_db_model.dart';
-import 'package:movie_booking_app/data/models/the_move_db_model_impl.dart';
+import 'package:movie_booking_app/data/models/the_movie_db_model.dart';
+import 'package:movie_booking_app/data/models/the_movie_db_model_impl.dart';
 import 'package:movie_booking_app/data/vos/actor_vo.dart';
 import 'package:movie_booking_app/data/vos/movie_vo.dart';
 import 'package:movie_booking_app/network/api_constants.dart';
@@ -10,15 +10,35 @@ import 'package:movie_booking_app/pages/pick_time_page.dart';
 import 'package:movie_booking_app/resources/color.dart';
 import 'package:movie_booking_app/resources/dimens.dart';
 import 'package:movie_booking_app/resources/string.dart';
+import 'package:movie_booking_app/widget_keys.dart';
 import 'package:movie_booking_app/widgets/back_button.dart';
 import 'package:movie_booking_app/widgets/floating_long_button.dart';
 import 'package:movie_booking_app/widgets/header_text.dart';
 import 'package:movie_booking_app/widgets/subtitle_text.dart';
 import 'package:provider/provider.dart';
 
-class MovieDetailPage extends StatelessWidget {
+class MovieDetailPage extends StatefulWidget {
   final int movieId;
   const MovieDetailPage({required this.movieId, Key? key}) : super(key: key);
+
+  @override
+  State<MovieDetailPage> createState() => _MovieDetailPageState();
+}
+
+class _MovieDetailPageState extends State<MovieDetailPage> {
+  DetailsBloc? detailsBloc;
+
+  @override
+  void initState() {
+    detailsBloc = DetailsBloc(widget.movieId);
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    detailsBloc?.makeDispose();
+    super.dispose();
+  }
 
   void popMovieDetailScreen(BuildContext context) {
     Navigator.pop(context);
@@ -36,7 +56,7 @@ class MovieDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => DetailsBloc(movieId),
+      create: (context) => detailsBloc,
       child: Selector<DetailsBloc, MovieVO?>(
         selector: (context, bloc) => bloc.movie,
         builder: (context, movie, child) => Scaffold(
@@ -105,6 +125,7 @@ class MovieDetailPage extends StatelessWidget {
                           context, movie?.id ?? 0, movie?.title ?? '');
                     },
                     buttonText: DETAILS_PAGE_GET_YOUR_TICKET_BUTTON,
+                    key: const Key(KEY_DETAILS_CONFIRM),
                   ),
                 ),
               )
@@ -372,10 +393,12 @@ class AppBarImageView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Image.network(
-      '$IMAGE_BASE_URL$imageUrl',
-      fit: BoxFit.cover,
-    );
+    return (imageUrl != '')
+        ? Image.network(
+            '$IMAGE_BASE_URL$imageUrl',
+            fit: BoxFit.cover,
+          )
+        : const CircularProgressIndicator();
   }
 }
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:movie_booking_app/bloc/home_bloc.dart';
-import 'package:movie_booking_app/data/models/the_move_db_model.dart';
-import 'package:movie_booking_app/data/models/the_move_db_model_impl.dart';
+import 'package:movie_booking_app/data/models/the_movie_db_model.dart';
+import 'package:movie_booking_app/data/models/the_movie_db_model_impl.dart';
 import 'package:movie_booking_app/data/models/tmba_model.dart';
 import 'package:movie_booking_app/data/models/tmba_model_impl.dart';
 import 'package:movie_booking_app/data/vos/genre_vo.dart';
@@ -28,9 +28,9 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  void logOut(HomeBloc bloc) {
-    bloc.tabLogOut().then((success) {
+  HomeBloc homeBloc = HomeBloc();
+  void logOut() {
+    homeBloc.tabLogOut().then((success) {
       Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
@@ -51,6 +51,12 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  @override
+  void dispose() {
+    homeBloc.makeDispose();
+    super.dispose();
+  }
+
   void openDrawer() {
     _scaffoldKey.currentState?.openDrawer();
   }
@@ -58,7 +64,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => HomeBloc(),
+      create: (context) => homeBloc,
       child: Selector<HomeBloc, ProfileVO?>(
         selector: (context, bloc) => bloc.profile,
         builder: (context, profile, child) => Scaffold(
@@ -68,8 +74,7 @@ class _HomePageState extends State<HomePage> {
           }),
           drawer: MenuDrawerSection(
             () {
-              HomeBloc bloc = Provider.of<HomeBloc>(context, listen: false);
-              logOut(bloc);
+              logOut();
             },
             profile: profile ?? ProfileVO(),
           ),
@@ -247,8 +252,7 @@ class DrawerUserInfoSectionView extends StatelessWidget {
                   child: Text(
                     email,
                     style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: DRAWER_GMAIL_FONT_SIZE),
+                        color: Colors.white, fontSize: DRAWER_GMAIL_FONT_SIZE),
                   ),
                 ),
                 const SizedBox(

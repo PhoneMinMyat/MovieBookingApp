@@ -1,4 +1,4 @@
-import 'package:movie_booking_app/data/models/the_move_db_model.dart';
+import 'package:movie_booking_app/data/models/the_movie_db_model.dart';
 import 'package:movie_booking_app/data/vos/genre_vo.dart';
 import 'package:movie_booking_app/data/vos/movie_vo.dart';
 import 'package:movie_booking_app/data/vos/actor_vo.dart';
@@ -6,6 +6,9 @@ import 'package:movie_booking_app/network/data_agents/retrofit_the_movie_db_data
 import 'package:movie_booking_app/network/data_agents/the_movie_db_data_agent.dart';
 import 'package:movie_booking_app/persistence/daos/actor_dao.dart';
 import 'package:movie_booking_app/persistence/daos/genre_dao.dart';
+import 'package:movie_booking_app/persistence/daos/impls/actor_dao_impl.dart';
+import 'package:movie_booking_app/persistence/daos/impls/genre_dao_impl.dart';
+import 'package:movie_booking_app/persistence/daos/impls/movie_dao_impl.dart';
 import 'package:movie_booking_app/persistence/daos/movie_dao.dart';
 import 'package:stream_transform/stream_transform.dart';
 
@@ -16,17 +19,24 @@ class TheMovieDbModelImpl implements TheMovieDbModel {
     return _singleton;
   }
 
-  TheMovieDbModelImpl._internal() {
-    getGenresFromDatabase();
-  }
+  TheMovieDbModelImpl._internal() ;
 
   //Daos
-  ActorDao mActorDao = ActorDao();
-  MovieDao mMovieDao = MovieDao();
-  GenreDao mGenreDao = GenreDao();
+  ActorDao mActorDao = ActorDaoImpl();
+  MovieDao mMovieDao = MovieDaoImpl();
+  GenreDao mGenreDao = GenreDaoImpl();
 
   //Network
-  final TheMovieDbDataAgent _mDataAgent = RetrofiTheMovieDbDataAgentImpl();
+  TheMovieDbDataAgent _mDataAgent = RetrofiTheMovieDbDataAgentImpl();
+
+  //For Testing Purpose
+  void setDaosAndDataAgents(MovieDao movieDao, ActorDao actorDao,
+      GenreDao genreDao, TheMovieDbDataAgent movieDataAgent) {
+    mMovieDao = movieDao;
+    mActorDao = actorDao;
+    mGenreDao = genreDao;
+    _mDataAgent = movieDataAgent;
+  }
 
   @override
   void getNowPlayingMovies() {

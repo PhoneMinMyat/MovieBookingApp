@@ -12,24 +12,38 @@ import 'package:movie_booking_app/pages/home_page.dart';
 import 'package:movie_booking_app/resources/color.dart';
 import 'package:movie_booking_app/resources/dimens.dart';
 import 'package:movie_booking_app/resources/string.dart';
+import 'package:movie_booking_app/widget_keys.dart';
 import 'package:movie_booking_app/widgets/long_button.dart';
 import 'package:provider/provider.dart';
 
-class LogInPage extends StatelessWidget {
-   LogInPage({Key? key}) : super(key: key);
+class LogInPage extends StatefulWidget {
+  LogInPage({Key? key}) : super(key: key);
 
- 
+  @override
+  State<LogInPage> createState() => _LogInPageState();
+}
 
+class _LogInPageState extends State<LogInPage> {
   //Variable
-  //Delete
   TextEditingController emailController = TextEditingController();
+
   TextEditingController passwordController = TextEditingController();
+
   TextEditingController confirmPasswordController = TextEditingController();
+
   TextEditingController nameController = TextEditingController();
+
   TextEditingController phoneNumberController = TextEditingController();
 
   //State Variable
   ProfileVO? profile;
+  RegisterBloc registerBloc = RegisterBloc();
+
+  @override
+  void dispose() {
+    registerBloc.makeDispose();
+    super.dispose();
+  }
 
   void navigateToHomePage(BuildContext context) {
     Navigator.pushAndRemoveUntil(
@@ -41,14 +55,14 @@ class LogInPage extends StatelessWidget {
   }
 
   void registerUser(BuildContext context, TextEditingController nameController,
-      TextEditingController emailController, RegisterBloc bloc) {
+      TextEditingController emailController) {
     if (nameController.text.isNotEmpty &&
         emailController.text.isNotEmpty &&
         phoneNumberController.text.isNotEmpty &&
         passwordController.text.isNotEmpty &&
         confirmPasswordController.text.isNotEmpty) {
       if (passwordController.text == confirmPasswordController.text) {
-        bloc
+        registerBloc
             .registerUser(
           nameController.text,
           emailController.text,
@@ -56,8 +70,7 @@ class LogInPage extends StatelessWidget {
           passwordController.text,
         )
             .then((success) {
-              navigateToHomePage(context);
-          
+          navigateToHomePage(context);
         }).catchError((error) {
           print(error);
         });
@@ -69,10 +82,13 @@ class LogInPage extends StatelessWidget {
     }
   }
 
-  void loginWithEmail(BuildContext context, RegisterBloc bloc,TextEditingController nameController,
-      TextEditingController emailController,) {
+  void loginWithEmail(
+    BuildContext context,
+    TextEditingController nameController,
+    TextEditingController emailController,
+  ) {
     if (emailController.text.isNotEmpty && passwordController.text.isNotEmpty) {
-      bloc
+      registerBloc
           .loginWithEmail(emailController.text, passwordController.text)
           .then((success) {
         navigateToHomePage(context);
@@ -108,22 +124,22 @@ class LogInPage extends StatelessWidget {
     );
   }
 
-  void signInwithGoogle(RegisterBloc bloc) {
-    bloc.signInWithGoogle();
+  void signInwithGoogle() {
+    registerBloc.signInWithGoogle();
   }
 
-  void loginWithGoogle(BuildContext context, RegisterBloc bloc) {
-    bloc.logInWithGoogle().then((success) {
+  void loginWithGoogle(BuildContext context) {
+    registerBloc.logInWithGoogle().then((success) {
       navigateToHomePage(context);
     }).catchError((error) => print(error));
   }
 
-  void registerWithFacebook(RegisterBloc bloc) async {
-    bloc.registerWithFacebook();
+  void registerWithFacebook() async {
+    registerBloc.registerWithFacebook();
   }
 
-  void loginWIthFacebook(BuildContext context, RegisterBloc bloc) async {
-    bloc.loginWithFacebook().then((success) {
+  void loginWIthFacebook(BuildContext context) async {
+    registerBloc.loginWithFacebook().then((success) {
       navigateToHomePage(context);
     }).catchError((error) => print(error));
   }
@@ -131,7 +147,7 @@ class LogInPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => RegisterBloc(),
+      create: (context) => registerBloc,
       child: Scaffold(
         body: Selector<RegisterBloc, TextEditingController>(
           selector: (context, bloc) => bloc.nameController,
@@ -139,6 +155,7 @@ class LogInPage extends StatelessWidget {
               Selector<RegisterBloc, TextEditingController>(
             selector: (context, bloc) => bloc.emailController,
             builder: (context, emailController, child) => SingleChildScrollView(
+              key: const Key(KEY_REGISTER_SCROLL_VIEW),
               child: Container(
                 padding: const EdgeInsets.all(MARGIN_MEDIUM_2x),
                 child: Column(
@@ -174,22 +191,23 @@ class LogInPage extends StatelessWidget {
                               Provider.of<RegisterBloc>(context, listen: false);
                           (isSignIn ?? false)
                               ? registerUser(context, nameController,
-                                  emailController, bloc)
-                              : loginWithEmail(context, bloc, nameController, emailController);
+                                  emailController)
+                              : loginWithEmail(context,  nameController,
+                                  emailController);
                         },
                         () {
                           RegisterBloc bloc =
                               Provider.of<RegisterBloc>(context, listen: false);
                           (isSignIn ?? false)
-                              ? signInwithGoogle(bloc)
-                              : loginWithGoogle(context, bloc);
+                              ? signInwithGoogle()
+                              : loginWithGoogle(context, );
                         },
                         () {
                           RegisterBloc bloc =
                               Provider.of<RegisterBloc>(context, listen: false);
                           (isSignIn ?? false)
-                              ? registerWithFacebook(bloc)
-                              : loginWIthFacebook(context, bloc);
+                              ? registerWithFacebook()
+                              : loginWIthFacebook(context, );
                         },
                         isSignIn: isSignIn ?? false,
                       ),
@@ -279,11 +297,13 @@ class TextFieldSectionView extends StatelessWidget {
         TextFieldWithLabelText(
           labelText: LOGIN_PAGE_EMAIL_TEXTFIELD_HINT,
           controller: emailController,
+          key: const Key(KEY_EMAIL_TEXT_FIELD),
         ),
         TextFieldWithLabelText(
           labelText: LOGIN_PAGE_PASSWORD_TEXTFIELD_HINT,
           isPassword: true,
           controller: passwordController,
+          key: const Key(KEY_PASSWORD_TEXT_FIELD),
         ),
         TextFieldWithLabelText(
           labelText: LOGIN_PAGE_CONFIRM_PASSWORD_TEXTFIELD_HINT,
@@ -402,9 +422,13 @@ class ButtonGroupSectionView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: MARGIN_LARGE),
-        LongButton(() {
-          onTapConfirm();
-        }, buttonText: CONFIRM),
+        LongButton(
+          () {
+            onTapConfirm();
+          },
+          buttonText: CONFIRM,
+          key: const Key(KEY_REGISTER_CONFIRM),
+        ),
       ],
     );
   }

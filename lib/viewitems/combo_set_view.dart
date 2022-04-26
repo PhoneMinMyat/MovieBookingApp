@@ -34,7 +34,7 @@ class ComboSetView extends StatelessWidget {
             decreaseCounter(snack.id ?? 0);
           }, () {
             increaseCounter(snack.id ?? 0);
-          }, count: snack.quantity ?? 0, price: snack.price.toString()),
+          }, count: snack.quantity ?? 0, price: snack.price.toString(),snackName: snack.name?? '',),
         ],
       ),
       const SizedBox(
@@ -49,11 +49,12 @@ class ComboSetPriceAndQtySectionView extends StatelessWidget {
   final String price;
   final Function decreaseCounter;
   final Function increaseCounter;
+  final String snackName;
   const ComboSetPriceAndQtySectionView(
     this.decreaseCounter,
     this.increaseCounter, {
     required this.count,
-    required this.price,
+    required this.price,required this.snackName,
     Key? key,
   }) : super(key: key);
 
@@ -70,7 +71,7 @@ class ComboSetPriceAndQtySectionView extends StatelessWidget {
           decreaseCounter();
         }, () {
           increaseCounter();
-        }, count: count)
+        }, count: count, snackName: snackName,)
       ],
     );
   }

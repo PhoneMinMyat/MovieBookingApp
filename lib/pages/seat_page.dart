@@ -14,12 +14,13 @@ import 'package:movie_booking_app/pages/snack_page.dart';
 import 'package:movie_booking_app/resources/color.dart';
 import 'package:movie_booking_app/resources/dimens.dart';
 import 'package:movie_booking_app/viewitems/simple_appbar_view.dart';
+import 'package:movie_booking_app/widget_keys.dart';
 import 'package:movie_booking_app/widgets/floating_long_button.dart';
 import 'package:movie_booking_app/widgets/normal_text.dart';
 import 'package:movie_booking_app/widgets/title_text.dart';
 import 'package:provider/provider.dart';
 
-class SeatPage extends StatelessWidget {
+class SeatPage extends StatefulWidget {
   final TimeslotsVO time;
   final String date;
   final String movieName;
@@ -37,6 +38,26 @@ class SeatPage extends StatelessWidget {
     required this.cinemaId,
   }) : super(key: key);
 
+  @override
+  State<SeatPage> createState() => _SeatPageState();
+}
+
+class _SeatPageState extends State<SeatPage> {
+  SeatBloc? seatBloc;
+
+  @override
+  void initState() {
+    seatBloc =
+        SeatBloc(widget.time.cinemaDayTimeSlotId.toString(), widget.date);
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    seatBloc?.makeDispose();
+    super.dispose();
+  }
+
   void navigateToSnackPage(
       {required BuildContext context,
       required String selectedSeat,
@@ -45,11 +66,11 @@ class SeatPage extends StatelessWidget {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => SnackPage(
-          bookingDate: date,
-          cinemaId: cinemaId,
+          bookingDate: widget.date,
+          cinemaId: widget.cinemaId,
           selectdSeatName: selectedSeat,
-          cinemaDayTimeslotId: time.cinemaDayTimeSlotId ?? 0,
-          movieId: movieId,
+          cinemaDayTimeslotId: widget.time.cinemaDayTimeSlotId ?? 0,
+          movieId: widget.movieId,
           seatPrice: price,
           row: selectedRow,
         ),
@@ -60,7 +81,7 @@ class SeatPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => SeatBloc(time.cinemaDayTimeSlotId.toString(), date),
+      create: (context) => seatBloc,
       child: Selector<SeatBloc, List<MovieSeatVO>?>(
           selector: (context, bloc) => bloc.seatingList,
           shouldRebuild: (previous, next) => previous != next,
@@ -70,14 +91,15 @@ class SeatPage extends StatelessWidget {
               appBar: const SimpleAppBarView(),
               backgroundColor: Colors.white,
               body: SingleChildScrollView(
+                key: const Key(KEY_SEAT_PAGE_SCROLLVIEW),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     MovieNameCinemaAndTimeSectionView(
-                      movieName: movieName,
-                      cinema: cinema,
-                      showdate: date,
-                      time: time.startTime ?? '',
+                      movieName: widget.movieName,
+                      cinema: widget.cinema,
+                      showdate: widget.date,
+                      time: widget.time.startTime ?? '',
                     ),
                     const SizedBox(
                       height: MARGIN_XLARGE,
@@ -97,7 +119,9 @@ class SeatPage extends StatelessWidget {
                     const SizedBox(
                       height: MARGIN_XLARGE,
                     ),
-                    const SeatStatusColorSectionView(),
+                    const SeatStatusColorSectionView(
+                      key: Key(KEY_SEAT_STATE_COLOR),
+                    ),
                     const SizedBox(
                       height: MARGIN_XLARGE,
                     ),
@@ -133,6 +157,7 @@ class SeatPage extends StatelessWidget {
                           },
                           buttonText: 'Buy Tickets for \$$price',
                           isNeedTransparentSpace: false,
+                          key: const Key(KEY_SEAT_CONFIRM),
                         ),
                       ),
                     )
@@ -293,6 +318,7 @@ class SeatSectionView extends StatelessWidget {
           itemBuilder: (context, index) {
             return SeatView(
               (seat) => selectSeat(seat),
+              key: Key(KEY_SEAT_ITEM + index.toString()),
               seatInfo: seatList[index],
             );
           }),
@@ -341,7 +367,10 @@ class SeatView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => selectSeat(seatInfo),
+      onTap: () {
+        print(key);
+        selectSeat(seatInfo);
+      },
       child: Container(
         decoration: BoxDecoration(
             color: getColor(),

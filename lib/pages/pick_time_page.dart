@@ -13,17 +13,37 @@ import 'package:movie_booking_app/pages/seat_page.dart';
 import 'package:movie_booking_app/resources/color.dart';
 import 'package:movie_booking_app/resources/dimens.dart';
 import 'package:movie_booking_app/resources/string.dart';
+import 'package:movie_booking_app/widget_keys.dart';
 import 'package:movie_booking_app/widgets/back_button.dart';
 import 'package:movie_booking_app/widgets/floating_long_button.dart';
 import 'package:movie_booking_app/widgets/title_text.dart';
 import 'package:provider/provider.dart';
 
-class PickTimePage extends StatelessWidget {
+class PickTimePage extends StatefulWidget {
   final int movieId;
   final String moiveName;
 
   const PickTimePage({required this.movieId, required this.moiveName, Key? key})
       : super(key: key);
+
+  @override
+  State<PickTimePage> createState() => _PickTimePageState();
+}
+
+class _PickTimePageState extends State<PickTimePage> {
+  TimeBloc? timeBloc;
+
+  @override
+  void initState() {
+    timeBloc = TimeBloc(widget.movieId);
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    timeBloc?.makeDispose();
+    super.dispose();
+  }
 
   void navigatiorToSeatPage(
       {required BuildContext context,
@@ -36,10 +56,10 @@ class PickTimePage extends StatelessWidget {
         MaterialPageRoute(
           builder: (context) => SeatPage(
             date: date,
-            movieName: moiveName,
+            movieName: widget.moiveName,
             time: selectedTimeslot,
             cinema: selectedCinema,
-            movieId: movieId,
+            movieId: widget.movieId,
             cinemaId: selectedCinemaId,
           ),
         ),
@@ -52,66 +72,68 @@ class PickTimePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-        create: (context) => TimeBloc(movieId),
+        create: (context) => timeBloc,
         child: Selector<TimeBloc, List<DateVO>?>(
           selector: (context, bloc) => bloc.movieShowDateList,
-          builder: (context, movieShowDateList, child) =>
-              Selector<TimeBloc, List<CinemaVO>?>(
-            selector: (context, bloc) => bloc.cinemaList,
-            shouldRebuild: (previous, next) => previous != next,
-            builder: (context, cinemaList, child) {
-              TimeBloc bloc = Provider.of<TimeBloc>(context, listen: false);
-              return Scaffold(
-              backgroundColor: Colors.white,
-              body: Stack(
-                children: [
-                  CustomScrollView(
-                    slivers: [
-                      CustomSliverAppBarView(
-                        (index) {
-                          TimeBloc bloc =
-                              Provider.of<TimeBloc>(context, listen: false);
-                          bloc.selectDate(index);
-                        },
-                        movieShowDateList: movieShowDateList ?? [],
-                      ),
-                      SliverList(
-                        delegate: SliverChildListDelegate(
-                          [
-                            ChoseMovieTypeAndTimeSectionView((timeslot) {
+          builder: (context, movieShowDateList, child) => Selector<TimeBloc,
+                  List<CinemaVO>?>(
+              selector: (context, bloc) => bloc.cinemaList,
+              shouldRebuild: (previous, next) => previous != next,
+              builder: (context, cinemaList, child) {
+                TimeBloc bloc = Provider.of<TimeBloc>(context, listen: false);
+                return Scaffold(
+                  backgroundColor: Colors.white,
+                  body: Stack(
+                    children: [
+                      CustomScrollView(
+                        slivers: [
+                          CustomSliverAppBarView(
+                            (index) {
                               TimeBloc bloc =
                                   Provider.of<TimeBloc>(context, listen: false);
-                              bloc.selectTimeslot(timeslot);
-                              print('send trigger');
-                            }, movieTimeList: cinemaList ?? []),
-                            const SizedBox(
-                              height: SPACE_FOR_FLOATING_LONG_BUTTON,
-                            )
-                          ],
+                              bloc.selectDate(index);
+                            },
+                            movieShowDateList: movieShowDateList ?? [],
+                          ),
+                          SliverList(
+                            delegate: SliverChildListDelegate(
+                              [
+                                ChoseMovieTypeAndTimeSectionView((timeslot) {
+                                  TimeBloc bloc = Provider.of<TimeBloc>(context,
+                                      listen: false);
+                                  bloc.selectTimeslot(timeslot);
+                                }, movieTimeList: cinemaList ?? []),
+                                const SizedBox(
+                                  height: SPACE_FOR_FLOATING_LONG_BUTTON,
+                                )
+                              ],
+                            ),
+                          )
+                        ],
+                      ),
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: MARGIN_MEDIUM_2x),
+                          child: FloatingLongButton(
+                            () {
+                              navigatiorToSeatPage(
+                                  context: context,
+                                  date: bloc.getSelectedDate(),
+                                  selectedCinema: bloc.getSelectedCinema(),
+                                  selectedCinemaId: bloc.getSelectedCinemaId(),
+                                  selectedTimeslot: bloc.getSelectedTimeslot());
+                            },
+                            buttonText: NEXT,
+                            key: const Key(KEY_PICK_TIME_CONFIRM),
+                          ),
                         ),
-                      )
+                      ),
                     ],
                   ),
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: MARGIN_MEDIUM_2x),
-                      child: FloatingLongButton(() {
-                        navigatiorToSeatPage(
-                            context: context,
-                            date: bloc.getSelectedDate(),
-                            selectedCinema: bloc.getSelectedCinema(),
-                            selectedCinemaId: bloc.getSelectedCinemaId(),
-                            selectedTimeslot: bloc.getSelectedTimeslot());
-                      }, buttonText: NEXT),
-                    ),
-                  ),
-                ],
-              ),
-            );
-            }
-          ),
+                );
+              }),
         ));
   }
 }
@@ -131,9 +153,13 @@ class ChoseMovieTypeAndTimeSectionView extends StatelessWidget {
         shrinkWrap: true,
         itemCount: movieTimeList.length,
         itemBuilder: (context, index) {
-          return ChoseMovieTypeAndTime((timeslot) => timeslotTap(timeslot),
-              timeList: movieTimeList[index].timeslots ?? [],
-              titleText: movieTimeList[index].cinema ?? '');
+          return ChoseMovieTypeAndTime(
+            (timeslot) => timeslotTap(timeslot),
+            key: Key(KEY_CINEMA_ITEM + index.toString()),
+            timeList: movieTimeList[index].timeslots ?? [],
+            titleText: movieTimeList[index].cinema ?? '',
+            cinemaIndex: index.toString(),
+          );
         });
   }
 }
@@ -142,10 +168,12 @@ class ChoseMovieTypeAndTime extends StatelessWidget {
   final String titleText;
   final List<TimeslotsVO> timeList;
   final Function(TimeslotsVO) timeslotTap;
+  final String cinemaIndex;
   const ChoseMovieTypeAndTime(
     this.timeslotTap, {
     required this.timeList,
     required this.titleText,
+    required this.cinemaIndex,
     Key? key,
   }) : super(key: key);
 
@@ -159,47 +187,70 @@ class ChoseMovieTypeAndTime extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TitleText(titleText),
-          GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: timeList.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisSpacing: MARGIN_MEDIUM_2x,
-                  mainAxisSpacing: MARGIN_CARD_MEDIUM_2,
-                  crossAxisCount: 3,
-                  childAspectRatio: 2.5),
-              itemBuilder: (context, index) {
-                TimeslotsVO tempTime = timeList[index];
-                return GestureDetector(
-                  onTap: () => timeslotTap(tempTime),
-                  child: Container(
-                    width: 50,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: SECONDARY_TEXT_COLOR, width: 1),
-                      borderRadius: BorderRadius.circular(MARGIN_MEDIUM),
-                      color: (tempTime.isSelected ?? false)
-                          ? PRIMARY_COLOR
-                          : Colors.white,
-                    ),
-                    child: Center(
-                      child: Text(
-                        tempTime.startTime ?? '',
-                        style: TextStyle(
-                          color: (tempTime.isSelected ?? false)
-                              ? Colors.white
-                              : Colors.black,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }),
+          TimeSlotSectionView(
+            (timeSlot) => timeslotTap(timeSlot),
+            timeList: timeList,
+            cinemaIndex: cinemaIndex,
+          ),
           const SizedBox(
             height: MARGIN_MEDIUM_3x,
           ),
         ],
       ),
     );
+  }
+}
+
+class TimeSlotSectionView extends StatelessWidget {
+  final List<TimeslotsVO> timeList;
+  final Function(TimeslotsVO) timeslotTap;
+  final String cinemaIndex;
+  const TimeSlotSectionView(this.timeslotTap,
+      {required this.timeList, required this.cinemaIndex, Key? key})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: timeList.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisSpacing: MARGIN_MEDIUM_2x,
+            mainAxisSpacing: MARGIN_CARD_MEDIUM_2,
+            crossAxisCount: 3,
+            childAspectRatio: 2.5),
+        itemBuilder: (context, index) {
+          TimeslotsVO tempTime = timeList[index];
+
+          return GestureDetector(
+            onTap: () {
+              print(cinemaIndex);
+              timeslotTap(tempTime);
+            },
+            child: Container(
+              key: Key(cinemaIndex+KEY_TIMESLOT_ITEM+index.toString()),
+              width: 50,
+              decoration: BoxDecoration(
+                border: Border.all(color: SECONDARY_TEXT_COLOR, width: 1),
+                borderRadius: BorderRadius.circular(MARGIN_MEDIUM),
+                color: (tempTime.isSelected ?? false)
+                    ? PRIMARY_COLOR
+                    : Colors.white,
+              ),
+              child: Center(
+                child: Text(
+                  tempTime.startTime ?? '',
+                  style: TextStyle(
+                    color: (tempTime.isSelected ?? false)
+                        ? Colors.white
+                        : Colors.black,
+                  ),
+                ),
+              ),
+            ),
+          );
+        });
   }
 }
 
@@ -226,6 +277,7 @@ class CustomSliverAppBarView extends StatelessWidget {
                 child: ChooseDateSectionView(
                   (index) => selectDate(index),
                   movieShowDateList: movieShowDateList,
+                  key: const Key(KEY_SELECT_DATE_SCROLL_VIEW),
                 ),
               ),
               Align(
@@ -294,6 +346,7 @@ class ChooseDateSectionView extends StatelessWidget {
           DateVO date = movieShowDateList[index];
           bool isSelected = date.isSelected ?? false;
           return GestureDetector(
+            key: Key(KEY_SELECT_DATE_ITEM_KEYS + index.toString()),
             onTap: () => selectDate(index),
             child: Column(
               children: [

@@ -6,51 +6,85 @@ import 'package:movie_booking_app/bloc/ticket_bloc.dart';
 import 'package:movie_booking_app/data/vos/checkout_vo.dart';
 import 'package:movie_booking_app/data/vos/movie_vo.dart';
 import 'package:movie_booking_app/network/api_constants.dart';
+import 'package:movie_booking_app/pages/home_page.dart';
 import 'package:movie_booking_app/resources/color.dart';
 import 'package:movie_booking_app/resources/dimens.dart';
 import 'package:movie_booking_app/resources/string.dart';
 import 'package:movie_booking_app/viewitems/simple_appbar_view.dart';
+import 'package:movie_booking_app/widget_keys.dart';
+import 'package:movie_booking_app/widgets/back_button.dart';
 import 'package:movie_booking_app/widgets/header_text.dart';
 import 'package:provider/provider.dart';
 
-class TicketPage extends StatelessWidget {
+class TicketPage extends StatefulWidget {
   final CheckoutVO checkout;
   const TicketPage({required this.checkout, Key? key}) : super(key: key);
 
- 
+  @override
+  State<TicketPage> createState() => _TicketPageState();
+}
+
+class _TicketPageState extends State<TicketPage> {
+  TicketBloc? ticketBloc;
+
+  @override
+  void initState() {
+    ticketBloc = TicketBloc(widget.checkout.movieId ?? 0);
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    ticketBloc?.makeDispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => TicketBloc(checkout.movieId ?? 0),
+      create: (context) => ticketBloc,
       child: Selector<TicketBloc, MovieVO?>(
-        selector: (context, bloc)=> bloc.movie,
+        selector: (context, bloc) => bloc.movie,
         builder: (context, movie, child) => Scaffold(
           backgroundColor: Colors.white,
-          appBar: const SimpleAppBarView(
-            isCrossIcon: true,
-            isTicketPage: true,
-          ),
-          body:(movie == null)? const CircularProgressIndicator() :SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const TitleSectionView(),
-                const SizedBox(height: MARGIN_MEDIUM_2x),
-                Padding(
-                  padding:const EdgeInsets.symmetric(horizontal: MARGIN_LARGE),
-                  child: TicketSectionView(
-                    movieTitle: movie.title ?? '',
-                    movieLength: '${movie.runtime}m',
-                    movieImageUrl: movie.backdropPath ?? '',
-                    checkout: checkout,
+          appBar: AppBar(
+              elevation: 0,
+              backgroundColor: Colors.white,
+              leading: BackButtonView(
+                () {
+                  Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const HomePage(),
+                      ),
+                      (Route<dynamic> route) => false);
+                },
+                isCrossIcon: true,key: const Key(KEY_TICKET_PAGE_EXIT),
+              )),
+          body: (movie == null)
+              ? const CircularProgressIndicator()
+              : SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const TitleSectionView(),
+                      const SizedBox(height: MARGIN_MEDIUM_2x),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: MARGIN_LARGE),
+                        child: TicketSectionView(
+                          movieTitle: movie.title ?? '',
+                          movieLength: '${movie.runtime}m',
+                          movieImageUrl: movie.backdropPath ?? '',
+                          checkout: widget.checkout,
+                        ),
+                      ),
+                      const SizedBox(height: MARGIN_XXLARGE),
+                    ],
                   ),
                 ),
-                const SizedBox(height: MARGIN_XXLARGE),
-              ],
-            ),
-          ),
         ),
       ),
     );

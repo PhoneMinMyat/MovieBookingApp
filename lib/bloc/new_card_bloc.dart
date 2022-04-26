@@ -4,7 +4,13 @@ import 'package:movie_booking_app/data/models/tmba_model_impl.dart';
 import 'package:movie_booking_app/data/vos/card_vo.dart';
 
 class NewCardBloc extends ChangeNotifier {
-  final TmbaModel _tmbaModel = TmbaModelImpl();
+  TmbaModel _tmbaModel = TmbaModelImpl();
+
+  NewCardBloc([TmbaModel? tmbaModel]) {
+    if (tmbaModel != null) {
+      _tmbaModel = tmbaModel;
+    }
+  }
   Future<List<CardVO>?> createCard(
       {required String cardNumber,
       required String cardHolder,
@@ -13,7 +19,7 @@ class NewCardBloc extends ChangeNotifier {
     return _tmbaModel.postCreateCard(cardNumber, cardHolder, expiration, cvc);
   }
 
-  void getProfile(){
-    _tmbaModel.getProfile();
+  Future<void> getProfile() {
+   return _tmbaModel.getProfile();
   }
 }

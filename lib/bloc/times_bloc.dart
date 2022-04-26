@@ -8,7 +8,7 @@ import 'package:movie_booking_app/data/vos/timeslots_vo.dart';
 
 class TimeBloc extends ChangeNotifier {
   //Modal
-  final TmbaModel mTmbaModel = TmbaModelImpl();
+   TmbaModel mTmbaModel = TmbaModelImpl();
 
   int movieId;
 
@@ -19,8 +19,13 @@ class TimeBloc extends ChangeNotifier {
   String selectedCinema = '';
   // String selectedDate;
   int selectedCinemaId = 0;
+  //Variables
+ bool isDispose = false;
 
-  TimeBloc(this.movieId) {
+  TimeBloc(this.movieId,[TmbaModel? tmbaModel]) {
+    if(tmbaModel!=null){
+      mTmbaModel = tmbaModel;
+    }
     movieShowDateList = List.generate(14, (index) => index).map((numberOfDays) {
       return DateTime.now().add(Duration(days: numberOfDays));
     }).map((dateTime) {
@@ -34,6 +39,8 @@ class TimeBloc extends ChangeNotifier {
     movieShowDateList?.first.isSelected = true;
 
     getCinemaList(movieId);
+
+    safeNotifyListeners();
   }
 
   String getSelectedDate() {
@@ -71,7 +78,7 @@ class TimeBloc extends ChangeNotifier {
     movieShowDateList = tempDateList;
 
     getCinemaList(movieId);
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   void getCinemaList(int movieId) {
@@ -84,7 +91,7 @@ class TimeBloc extends ChangeNotifier {
         .getCinemaDayTimeslotFromDatabase(getSelectedDate(), movieId.toString())
         .listen((cinemaListFromHive) {
       cinemaList = cinemaListFromHive?.cinemaList;
-      notifyListeners();
+      safeNotifyListeners();
     }).onError((error) => print(error));
   }
 
@@ -109,6 +116,18 @@ class TimeBloc extends ChangeNotifier {
     cinemaList = tempCinemaList;
     print('change');
 
-    notifyListeners();
+    safeNotifyListeners();
+  }
+
+   void safeNotifyListeners(){
+    if(isDispose == false){
+      notifyListeners();
+    }
+  }
+
+  void makeDispose(){
+    if(isDispose == false){
+      isDispose = true;
+    }
   }
 }

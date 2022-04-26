@@ -7,39 +7,47 @@ import 'package:movie_booking_app/data/models/tmba_model_impl.dart';
 import 'package:movie_booking_app/data/vos/profile_vo.dart';
 
 class RegisterBloc extends ChangeNotifier {
+  //Variables
+  bool isDispose = false;
+
   //State Variable
   ProfileVO? profile;
   bool? isSignIn;
+
+
   TextEditingController nameController = TextEditingController();
   TextEditingController emailController = TextEditingController();
 
   //Modal
-  final TmbaModel _model = TmbaModelImpl();
+   TmbaModel _model = TmbaModelImpl();
 
   //Variable
   String googleToken = '';
   String facebookToken = '';
 
-  RegisterBloc() {
+  RegisterBloc([TmbaModel? tmbaModel]) {
+    if(tmbaModel != null){
+      _model = tmbaModel;
+    }
     isSignIn = false;
   }
 
   void tapTabBar() {
     if (isSignIn != null) {
       isSignIn = !isSignIn!;
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
   Future<bool> registerUser(
-      String name, String email, String phoneNumber, String password) {
+      String name, String email, String phoneNumber, String password) async {
     bool success = false;
-    _model
+  await  _model
         .postRegisterData(
             name, email, phoneNumber, password, googleToken, facebookToken)
         .then((profileRes) {
       profile = profileRes;
-      notifyListeners();
+      safeNotifyListeners();
       success = true;
     }).catchError((error) {
       print(error);
@@ -47,11 +55,11 @@ class RegisterBloc extends ChangeNotifier {
     return Future.value(success);
   }
 
-  Future<bool> loginWithEmail(String email, String password) {
+  Future<bool> loginWithEmail(String email, String password) async {
     bool success = false;
-    _model.postLogInWithGmail(email, password).then((profileRes) {
+   await _model.postLogInWithGmail(email, password).then((profileRes) {
       profile = profileRes;
-      notifyListeners();
+      safeNotifyListeners();
       success = true;
     }).catchError((error) {
       print(error);
@@ -70,7 +78,7 @@ class RegisterBloc extends ChangeNotifier {
       print('Google Token ===> $googleToken');
       emailController.text = googleAccount?.email ?? '';
       nameController.text = googleAccount?.displayName ?? '';
-      notifyListeners();
+      safeNotifyListeners();
     });
   }
 
@@ -81,13 +89,12 @@ class RegisterBloc extends ChangeNotifier {
       'https://www.googleapis.com/auth/contacts.readonly',
     ]);
 
-    await _googleSignIn.signIn().then((googleAccount)  {
+    await _googleSignIn.signIn().then((googleAccount) async{
       googleToken = googleAccount?.id ?? '';
       print('Google Token ====> $googleToken');
       if (googleToken != '') {
-        _model.postLogInWithGoogle(googleToken).then((profileResponse)  {
+      await  _model.postLogInWithGoogle(googleToken).then((profileResponse) {
           profile = profileResponse;
-
           if (profile?.token != null) {
             success = true;
           }
@@ -106,7 +113,7 @@ class RegisterBloc extends ChangeNotifier {
       final userData = await FacebookAuth.instance.getUserData();
       nameController.text = userData['name'].toString();
       emailController.text = userData['email'].toString();
-      notifyListeners();
+      safeNotifyListeners();
     } else {
       print(result.status);
       print(result.message);
@@ -121,7 +128,7 @@ class RegisterBloc extends ChangeNotifier {
       final AccessToken? accessToken = result.accessToken;
       facebookToken = accessToken?.userId ?? '';
       if (facebookToken != '') {
-        _model.postLogInWithFacebook(facebookToken).then((profileResponse) {
+      await  _model.postLogInWithFacebook(facebookToken).then((profileResponse) {
           profile = profileResponse;
           if (profile?.token != null) {
             success = true;
@@ -133,5 +140,17 @@ class RegisterBloc extends ChangeNotifier {
       print(result.message);
     }
     return Future.value(success);
+  }
+
+   void safeNotifyListeners(){
+    if(isDispose == false){
+      notifyListeners();
+    }
+  }
+
+  void makeDispose(){
+    if(isDispose == false){
+      isDispose = true;
+    }
   }
 }

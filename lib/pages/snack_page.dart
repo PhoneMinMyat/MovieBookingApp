@@ -12,12 +12,13 @@ import 'package:movie_booking_app/resources/dimens.dart';
 import 'package:movie_booking_app/resources/string.dart';
 import 'package:movie_booking_app/viewitems/combo_set_view.dart';
 import 'package:movie_booking_app/viewitems/simple_appbar_view.dart';
+import 'package:movie_booking_app/widget_keys.dart';
 import 'package:movie_booking_app/widgets/floating_long_button.dart';
 import 'package:movie_booking_app/widgets/normal_text.dart';
 import 'package:movie_booking_app/widgets/subtitle_text.dart';
 import 'package:provider/provider.dart';
 
-class SnackPage extends StatelessWidget {
+class SnackPage extends StatefulWidget {
   final String selectdSeatName;
   final double seatPrice;
   final String bookingDate;
@@ -37,6 +38,19 @@ class SnackPage extends StatelessWidget {
     required this.cinemaId,
   }) : super(key: key);
 
+  @override
+  State<SnackPage> createState() => _SnackPageState();
+}
+
+class _SnackPageState extends State<SnackPage> {
+  SnackBloc snackBloc = SnackBloc();
+
+  @override
+  void dispose() {
+    snackBloc.makeDispose();
+    super.dispose();
+  }
+
   void navigateToPaymentPage(
       {required BuildContext context,
       required double totalSnackPrice,
@@ -45,13 +59,13 @@ class SnackPage extends StatelessWidget {
         context,
         MaterialPageRoute(
             builder: (context) => PaymentPage(
-                  selectdSeatName: selectdSeatName,
-                  bookingDate: bookingDate,
-                  cinemaDayTimeslotId: cinemaDayTimeslotId,
-                  row: row,
-                  movieId: movieId,
-                  cinemaId: cinemaId,
-                  subTotal: seatPrice + totalSnackPrice,
+                  selectdSeatName: widget.selectdSeatName,
+                  bookingDate: widget.bookingDate,
+                  cinemaDayTimeslotId: widget.cinemaDayTimeslotId,
+                  row: widget.row,
+                  movieId: widget.movieId,
+                  cinemaId: widget.cinemaId,
+                  subTotal: widget.seatPrice + totalSnackPrice,
                   selectedSnackList: selectedSnackList,
                 )));
   }
@@ -59,7 +73,7 @@ class SnackPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => SnackBloc(),
+      create: (context) => snackBloc,
       child: Selector<SnackBloc, double>(
           selector: (context, bloc) => bloc.totalPrice,
           builder: (context, totalPrice, child) {
@@ -94,7 +108,7 @@ class SnackPage extends StatelessWidget {
                       const PromoCodeSectionView(),
                       const SizedBox(height: MARGIN_MEDIUM_2x),
                       SubTotalText(
-                        totalAmount: seatPrice + totalPrice,
+                        totalAmount: widget.seatPrice + totalPrice,
                       ),
                       const SizedBox(height: MARGIN_MEDIUM_2x),
                       Selector<SnackBloc, List<PaymentMethodVO>?>(
@@ -115,6 +129,7 @@ class SnackPage extends StatelessWidget {
                               totalSnackPrice: totalPrice);
                         },
                         buttonText: CONFIRM,
+                        key: const Key(KEY_SNACK_CONFIRM),
                       ),
                     ],
                   ),

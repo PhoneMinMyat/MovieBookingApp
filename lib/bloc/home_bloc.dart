@@ -1,37 +1,45 @@
 import 'package:flutter/foundation.dart';
-import 'package:movie_booking_app/data/models/the_move_db_model.dart';
-import 'package:movie_booking_app/data/models/the_move_db_model_impl.dart';
+import 'package:movie_booking_app/data/models/the_movie_db_model.dart';
+import 'package:movie_booking_app/data/models/the_movie_db_model_impl.dart';
 import 'package:movie_booking_app/data/models/tmba_model.dart';
 import 'package:movie_booking_app/data/models/tmba_model_impl.dart';
 import 'package:movie_booking_app/data/vos/movie_vo.dart';
 import 'package:movie_booking_app/data/vos/profile_vo.dart';
 
 class HomeBloc extends ChangeNotifier {
+
+  //Variables
+ bool isDispose = false;
+
   //STATE VARIABLE
   ProfileVO? profile;
   List<MovieVO>? nowPlayingMovieList;
   List<MovieVO>? upcomingMovieList;
 
-  final TheMovieDbModel _model = TheMovieDbModelImpl();
-  final TmbaModel _tmbaModel = TmbaModelImpl();
+   TheMovieDbModel _model = TheMovieDbModelImpl();
+   TmbaModel _tmbaModel = TmbaModelImpl();
 
-  HomeBloc() {
+  HomeBloc([TheMovieDbModel? movieDbModel, TmbaModel? tmbaModel]) {
+    if(movieDbModel != null && tmbaModel != null){
+      _model = movieDbModel;
+      _tmbaModel = tmbaModel;
+    }
     //Profile
     _tmbaModel.getProfileFromDatabase().listen((profileFromDB) {
       profile = profileFromDB;
-      notifyListeners();
+      safeNotifyListeners();
     }).onError((error) => print(error.toString()));
 
     //Now Playing
     _model.getNowPlayingMoviesFromDatabase().listen((movieList) {
       nowPlayingMovieList = movieList;
-      notifyListeners();
+      safeNotifyListeners();
     }).onError((error) => print(error.toString()));
 
     //Upcoming
     _model.getUpcomingMoviesFromDatabase().listen((movieList) {
       upcomingMovieList = movieList;
-      notifyListeners();
+      safeNotifyListeners();
     }).onError((error) => print(error.toString()));
 
   }
@@ -44,5 +52,17 @@ class HomeBloc extends ChangeNotifier {
         }
       }).catchError((error) => print(error));
     return Future.value(success);
+  }
+
+  void safeNotifyListeners(){
+    if(isDispose == false){
+      notifyListeners();
+    }
+  }
+
+  void makeDispose(){
+    if(isDispose == false){
+      isDispose = true;
+    }
   }
 }

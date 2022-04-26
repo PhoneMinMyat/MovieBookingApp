@@ -18,12 +18,13 @@ import 'package:movie_booking_app/resources/dimens.dart';
 import 'package:movie_booking_app/resources/string.dart';
 import 'package:movie_booking_app/viewitems/credit_card_item.dart';
 import 'package:movie_booking_app/viewitems/simple_appbar_view.dart';
+import 'package:movie_booking_app/widget_keys.dart';
 import 'package:movie_booking_app/widgets/floating_long_button.dart';
 import 'package:movie_booking_app/widgets/header_text.dart';
 import 'package:movie_booking_app/widgets/subtitle_text.dart';
 import 'package:provider/provider.dart';
 
-class PaymentPage extends StatelessWidget {
+class PaymentPage extends StatefulWidget {
   final String selectdSeatName;
   final double subTotal;
   final String bookingDate;
@@ -45,6 +46,38 @@ class PaymentPage extends StatelessWidget {
     required this.selectedSnackList,
   }) : super(key: key);
 
+  @override
+  State<PaymentPage> createState() => _PaymentPageState();
+}
+
+class _PaymentPageState extends State<PaymentPage> {
+  PaymentBloc? paymentBloc;
+
+  @override
+  void initState() {
+    CheckOutRequest checkOutRequest = CheckOutRequest(
+      cinemaDayTimeslotId: widget.cinemaDayTimeslotId,
+      row: widget.row,
+      seatNumber: widget.selectdSeatName,
+      bookingDate: widget.bookingDate,
+      totalPrice: widget.subTotal,
+      movieId: widget.movieId,
+      cinemaId: widget.cinemaId,
+      snacks: widget.selectedSnackList
+          .map((snack) => SnackRequest(id: snack.id, quantity: snack.quantity))
+          .toList(),
+    );
+    paymentBloc = PaymentBloc(checkOutRequest);
+    paymentBloc?.makeRun();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    paymentBloc?.makeDispose();
+    super.dispose();
+  }
+
   void navigationToAddNewCardPage(BuildContext context) {
     Navigator.push(
       context,
@@ -54,11 +87,11 @@ class PaymentPage extends StatelessWidget {
     );
   }
 
-  void navigateToTicketPage(BuildContext context, PaymentBloc bloc) {
-    bloc.checkout().then((checkoutInfoRes) {
+  void navigateToTicketPage(BuildContext context) {
+    paymentBloc?.checkout().then((checkoutInfoRes) {
       print('CheckoutRes ===> ${checkoutInfoRes?.bookingDate}');
       if (checkoutInfoRes?.bookingNo != null) {
-         Navigator.push(
+        Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => TicketPage(
@@ -67,31 +100,19 @@ class PaymentPage extends StatelessWidget {
           ),
         );
       }
-     
     }).catchError((error) => print(error));
   }
 
   @override
   Widget build(BuildContext context) {
-    CheckOutRequest checkOutRequest = CheckOutRequest(
-      cinemaDayTimeslotId: cinemaDayTimeslotId,
-      row: row,
-      seatNumber: selectdSeatName,
-      bookingDate: bookingDate,
-      totalPrice: subTotal,
-      movieId: movieId,
-      cinemaId: cinemaId,
-      snacks: selectedSnackList
-          .map((snack) => SnackRequest(id: snack.id, quantity: snack.quantity))
-          .toList(),
-    );
-
     return ChangeNotifierProvider(
-      create: (context) => PaymentBloc(checkOutRequest),
+      create: (context) => paymentBloc,
       child: Selector<PaymentBloc, ProfileVO?>(
         selector: (context, bloc) => bloc.profile,
+        shouldRebuild: (previous, next) => previous != next,
         builder: (context, profile, child) {
           PaymentBloc bloc = Provider.of<PaymentBloc>(context, listen: false);
+          print('Payment Bloc ===> ${profile.toString()}');
           return Scaffold(
             appBar: const SimpleAppBarView(),
             backgroundColor: Colors.white,
@@ -102,7 +123,7 @@ class PaymentPage extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: MARGIN_MEDIUM_2x),
                   child: PaymentAmountSectionView(
-                    paymentAmount: subTotal,
+                    paymentAmount: widget.subTotal,
                   ),
                 ),
                 const SizedBox(height: MARGIN_MEDIUM_2x),
@@ -111,26 +132,30 @@ class PaymentPage extends StatelessWidget {
                     bloc.changeCard(index);
                   },
                   cardList: profile?.cards ?? [],
+                  key: const Key(KEY_CARD_LIST),
                 ),
                 const SizedBox(
                   height: MARGIN_XLARGE,
                 ),
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: MARGIN_MEDIUM_2x),
-                  child: AddNewCardView(() {
-                    navigationToAddNewCardPage(context);
-                  }),
+                  padding: const EdgeInsets.only(left: MARGIN_MEDIUM_2x),
+                  child: AddNewCardView(
+                    () {
+                      navigationToAddNewCardPage(context);
+                    },
+                    key: const Key(KEY_ADD_NEW_CARD_BUTTON),
+                  ),
                 ),
                 const Spacer(),
                 Padding(
                   padding: const EdgeInsets.all(MARGIN_MEDIUM_2x),
                   child: FloatingLongButton(
                     () {
-                      navigateToTicketPage(context, bloc);
+                      navigateToTicketPage(context);
                     },
                     buttonText: CONFIRM,
                     isNeedTransparentSpace: false,
+                    key: const Key(KEY_PAYMENT_CONFIRM),
                   ),
                 ),
               ],
@@ -156,6 +181,7 @@ class AddNewCardView extends StatelessWidget {
         onTap();
       },
       child: Row(
+        mainAxisSize: MainAxisSize.max,
         children: const [
           Icon(
             MdiIcons.plusCircle,
@@ -186,18 +212,19 @@ class CreditCardList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return (cardList.length == 0)
+    List<CardVO> reversedCardList = cardList.reversed.toList();
+    return (reversedCardList.length == 0)
         ? Container()
         : CarouselSlider.builder(
-            itemCount: cardList.length,
+            itemCount: reversedCardList.length,
             itemBuilder: (context, itemIndex, pageviewIndex) {
               return CreditCardItem(
-                card: cardList[itemIndex],
+                card: reversedCardList[itemIndex],
               );
             },
             options: CarouselOptions(
               onPageChanged: (index, carouselPageChangedReason) {
-                cardChange(index);
+                cardChange(reversedCardList.length - 1 - index);
               },
               enableInfiniteScroll: false,
               enlargeCenterPage: true,

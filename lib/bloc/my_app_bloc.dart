@@ -7,12 +7,17 @@ class MyAppBloc extends ChangeNotifier {
   //State Variable
   ProfileVO? userProfile;
 
-  final TmbaModel _model = TmbaModelImpl();
+  TmbaModel _model = TmbaModelImpl();
 
-  MyAppBloc() {
+  MyAppBloc([TmbaModel? tmbaModel]) {
+    if (tmbaModel != null) {
+      _model = tmbaModel;
+    }
     _model.getProfileFromDatabase().listen((profile) {
-      userProfile = profile;
-      notifyListeners();
+      if (profile.token != null) {
+        userProfile = profile;
+        notifyListeners();
+      }
     }).onError((error) {});
   }
 }

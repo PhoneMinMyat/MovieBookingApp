@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:movie_booking_app/data/models/the_move_db_model.dart';
-import 'package:movie_booking_app/data/models/the_move_db_model_impl.dart';
+import 'package:movie_booking_app/data/models/the_movie_db_model.dart';
+import 'package:movie_booking_app/data/models/the_movie_db_model_impl.dart';
 import 'package:movie_booking_app/data/vos/movie_vo.dart';
 import 'package:movie_booking_app/network/api_constants.dart';
 import 'package:movie_booking_app/resources/color.dart';
@@ -20,15 +20,7 @@ class HorizontalMovieListItem extends StatefulWidget {
 }
 
 class _HorizontalMovieListItemState extends State<HorizontalMovieListItem> {
-  final TheMovieDbModel mMovieModel = TheMovieDbModelImpl();
-  String? movieGenres;
-  @override
-  void initState() {
-    mMovieModel
-        .getGenresById(widget.movie?.genreIds ?? [])
-        .then((genresAsString) => movieGenres = genresAsString);
-    super.initState();
-  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -53,18 +45,18 @@ class _HorizontalMovieListItemState extends State<HorizontalMovieListItem> {
             maxLines: 1,
             style: const TextStyle(fontWeight: FontWeight.bold, overflow: TextOverflow.ellipsis),
           ),
-          const SizedBox(
-            height: MARGIN_SMALL,
-          ),
-          Text(
-            // '${widget.movie?.getGenreAsSlashSeparatedString()} . ${widget.movie?.getRunTimeAsFormattedString()}',
-            movieGenres ?? '',
+          // const SizedBox(
+          //   height: MARGIN_SMALL,
+          // ),
+          // Text(
+          //   // '${widget.movie?.getGenreAsSlashSeparatedString()} . ${widget.movie?.getRunTimeAsFormattedString()}',
+          //   movieGenres ?? '',
             
-            style: const TextStyle(
-              color: SECONDARY_TEXT_COLOR,
-              fontSize: HORIZONTAL_MOVIE_GENRE_TEXT_SIZE,
-            ),
-          ),
+          //   style: const TextStyle(
+          //     color: SECONDARY_TEXT_COLOR,
+          //     fontSize: HORIZONTAL_MOVIE_GENRE_TEXT_SIZE,
+          //   ),
+          // ),
         ],
       ),
     );

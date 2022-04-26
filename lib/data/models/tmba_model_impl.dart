@@ -11,6 +11,10 @@ import 'package:movie_booking_app/data/vos/snack_vo.dart';
 import 'package:movie_booking_app/network/data_agents/retrofit_tmba_data_agent_impl.dart';
 import 'package:movie_booking_app/network/data_agents/tmba_data_agent.dart';
 import 'package:movie_booking_app/persistence/daos/cinema_dao.dart';
+import 'package:movie_booking_app/persistence/daos/impls/cinema_dao_impl.dart';
+import 'package:movie_booking_app/persistence/daos/impls/payment_method_dao_impl.dart';
+import 'package:movie_booking_app/persistence/daos/impls/profile_dao_impl.dart';
+import 'package:movie_booking_app/persistence/daos/impls/snack_dao_impl.dart';
 import 'package:movie_booking_app/persistence/daos/payment_method_dao.dart';
 import 'package:movie_booking_app/persistence/daos/profile_dao.dart';
 import 'package:movie_booking_app/persistence/daos/snack_dao.dart';
@@ -26,10 +30,27 @@ class TmbaModelImpl implements TmbaModel {
   TmbaModelImpl._internal();
 
   ///Daos
-  final ProfileDao _mProfileDao = ProfileDao();
-  final CinemaDao _mCinemaDao = CinemaDao();
-  final SnackDao _mSnackDao = SnackDao();
-  final PaymentMethodDao _mPaymentDao = PaymentMethodDao();
+  ProfileDao _mProfileDao = ProfileDaoImpl();
+  CinemaDao _mCinemaDao = CinemaDaoImpl();
+  SnackDao _mSnackDao = SnackDaoImpl();
+  PaymentMethodDao _mPaymentDao = PaymentMethodDaoImpl();
+
+  ///Network
+  TmbaDataAgent _tmbaDataAgent = RetrofitTmbaDataAgentImpl();
+
+  //For Testing
+  void setDaoAndDataAgent(
+      ProfileDao profileDao,
+      CinemaDao cinemaDao,
+      SnackDao snackDao,
+      PaymentMethodDao paymentMethodDao,
+      TmbaDataAgent tmbaDataAgent) {
+    _mProfileDao = profileDao;
+    _mCinemaDao = cinemaDao;
+    _mSnackDao = snackDao;
+    _mPaymentDao = paymentMethodDao;
+    _tmbaDataAgent = tmbaDataAgent;
+  }
 
   String getBearerToken() {
     String userToken = _mProfileDao.getProfile().token ?? '';
@@ -42,8 +63,6 @@ class TmbaModelImpl implements TmbaModel {
     return profileId;
   }
 
-  ///Network
-  final TmbaDataAgent _tmbaDataAgent = RetrofitTmbaDataAgentImpl();
   @override
   Future<ProfileVO> postRegisterData(String name, String email, String phone,
       String password, String googleAccessToken, String fbAccessToken) {
@@ -65,10 +84,11 @@ class TmbaModelImpl implements TmbaModel {
   }
 
   @override
-  void getProfile() {
-    _tmbaDataAgent.getProfile(getBearerToken()).then((profile) {
+  Future<void> getProfile() {
+  return  _tmbaDataAgent.getProfile(getBearerToken()).then((profile) {
       ProfileVO tempProfile = profile;
       tempProfile.token = _mProfileDao.getProfile().token ?? '';
+      print(tempProfile.toString());
       _mProfileDao.saveProfile(tempProfile);
     });
   }
@@ -90,16 +110,17 @@ class TmbaModelImpl implements TmbaModel {
   }
 
   @override
-  Future<int> postLogOut() {
+  Future<int> postLogOut() async {
     int code = 0;
 
-    _tmbaDataAgent.postLogOut(getBearerToken()).then((response) {
-      print(response.message);
+    await _tmbaDataAgent.postLogOut(getBearerToken()).then((response) {
+      print(response.code);
       code = response.code ?? 0;
       if (response.code == 200) {
         _mProfileDao.deleteAllProfile();
       }
     });
+    print(code);
     return Future.value(code);
   }
 
@@ -171,6 +192,7 @@ class TmbaModelImpl implements TmbaModel {
 
   @override
   Stream<ProfileVO> getProfileFromDatabase() {
+   
     return _mProfileDao
         .getProfileEventStream()
         .startWith(_mProfileDao.getProfileStream())
