@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:movie_booking_app/config/config_values.dart';
+import 'package:movie_booking_app/config/environment_config.dart';
 import 'package:movie_booking_app/pages/login_page.dart';
 import 'package:movie_booking_app/resources/color.dart';
 import 'package:movie_booking_app/resources/dimens.dart';
@@ -12,7 +14,7 @@ class WelcomePage extends StatelessWidget {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) {
-          return  LogInPage();
+          return LogInPage();
         },
       ),
     );
@@ -22,8 +24,19 @@ class WelcomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: PRIMARY_COLOR,
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: MARGIN_MEDIUM_2x),
+      body: TweenAnimationBuilder(
+        duration: const Duration(milliseconds: 500),
+        tween: Tween<double>(begin: 0, end: 1.0),
+        builder: (context, double tweenValue, child) => Opacity(
+          opacity: tweenValue,
+          child: Padding(
+            padding: EdgeInsets.only(
+                left: MARGIN_MEDIUM_2x,
+                right: MARGIN_MEDIUM_2x,
+                bottom: MARGIN_MEDIUM_2x * tweenValue),
+            child: child,
+          ),
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
@@ -46,8 +59,7 @@ class WelcomePage extends StatelessWidget {
               style: TextStyle(
                   color: Colors.white,
                   fontSize: TEXT_REGULAR_2x,
-                  fontWeight: FontWeight.w400
-                  ),
+                  fontWeight: FontWeight.w400),
             ),
             const SizedBox(
               height: MARGIN_XXLARGE + MARGIN_XXLARGE,
@@ -77,7 +89,7 @@ class WelcomeImageSectionView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Image.asset(
-      'assets/images/welcome_image.png',
+      kWelcomeVectors[EnvironmentConfig.kConfigWelcomeVector] ?? '',
       height: WELCOMEPAGE_IMAGE_HEIGHT,
     );
   }

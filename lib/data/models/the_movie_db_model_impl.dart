@@ -65,7 +65,7 @@ class TheMovieDbModelImpl implements TheMovieDbModel {
   @override
   void getCreditsByMovie(int movieId) {
     _mDataAgent.getCreditsByMovie(movieId).then((actor) {
-      mActorDao.saveAllActors(actor ?? []);
+      mActorDao.saveAllActors(actor ?? [], movieId);
     });
   }
 
@@ -90,8 +90,8 @@ class TheMovieDbModelImpl implements TheMovieDbModel {
     getCreditsByMovie(movieId);
     return mActorDao
         .getActorsEventStream()
-        .startWith(mActorDao.getActorsStream())
-        .map((event) => mActorDao.getAllActors());
+        .startWith(mActorDao.getActorsByMovieIdStream(movieId))
+        .map((event) => mActorDao.getActorsByMovieId(movieId));
   }
 
   @override

@@ -1,15 +1,10 @@
-import 'package:dio/dio.dart';
 import 'package:dotted_line/dotted_line.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:movie_booking_app/bloc/seat_bloc.dart';
 
-import 'package:movie_booking_app/data/models/tmba_model.dart';
-import 'package:movie_booking_app/data/models/tmba_model_impl.dart';
 import 'package:movie_booking_app/data/vos/movie_seat_vo.dart';
 import 'package:movie_booking_app/data/vos/timeslots_vo.dart';
-import 'package:movie_booking_app/dummy_data.dart';
-import 'package:movie_booking_app/network/responses/error_response.dart';
 import 'package:movie_booking_app/pages/snack_page.dart';
 import 'package:movie_booking_app/resources/color.dart';
 import 'package:movie_booking_app/resources/dimens.dart';
@@ -236,15 +231,15 @@ class SeatStatusColorSectionView extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: MARGIN_MEDIUM_2x),
       child: Row(
-        children: const [
-          Expanded(
+        children: [
+          const Expanded(
             flex: 1,
             child: SeatStatusColorCircleAndInfoView(
               seatColor: MOVIE_SEAT_AVAILABLE_COLOR,
               infoTitle: 'Available',
             ),
           ),
-          Expanded(
+          const Expanded(
             flex: 1,
             child: SeatStatusColorCircleAndInfoView(
               seatColor: MOVIE_SEAT_TAKEN_COLOR,
@@ -308,7 +303,7 @@ class SeatSectionView extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: MARGIN_MEDIUM_2x),
       child: GridView.builder(
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: (seatList.length != 0) ? seatList.length : 1,
+          itemCount: (seatList.isNotEmpty) ? seatList.length : 1,
           shrinkWrap: true,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               mainAxisSpacing: 10,
@@ -368,7 +363,6 @@ class SeatView extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        print(key);
         selectSeat(seatInfo);
       },
       child: Container(
@@ -416,7 +410,10 @@ class MovieNameCinemaAndTimeSectionView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        TitleText(movieName),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: MARGIN_MEDIUM_2x),
+          child: TitleText(movieName, isSeatPage: true,),
+        ),
         const SizedBox(
           height: MARGIN_SMALL,
         ),

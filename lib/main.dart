@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:movie_booking_app/bloc/my_app_bloc.dart';
+import 'package:movie_booking_app/data/vos/actor_list_vo.dart';
 import 'package:movie_booking_app/data/vos/actor_vo.dart';
 import 'package:movie_booking_app/data/vos/card_vo.dart';
 import 'package:movie_booking_app/data/vos/cinema_list_vo.dart';
@@ -37,6 +38,7 @@ void main() async {
   Hive.registerAdapter(SnackVOAdapter());
   Hive.registerAdapter(PaymentMethodVOAdapter());
   Hive.registerAdapter(CinemaListVOAdapter());
+  Hive.registerAdapter(ActorListVOAdapter());
 
   await Hive.openBox<ProfileVO>(BOX_NAME_PROFILE_VO);
   await Hive.openBox<ActorVO>(BOX_NAME_ACTOR_VO);
@@ -46,6 +48,7 @@ void main() async {
   await Hive.openBox<CinemaVO>(BOX_NAME_CINEMA_VO);
   await Hive.openBox<SnackVO>(BOX_NAME_SNACK_VO);
   await Hive.openBox<PaymentMethodVO>(BOX_NAME_PAYMENT_METHOD_VO);
+  await Hive.openBox<ActorListVO>(BOX_NAME_ACTOR_LIST_VO);
   runApp(const MyApp());
 }
 

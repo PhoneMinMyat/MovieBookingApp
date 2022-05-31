@@ -29,17 +29,15 @@ class SeatBloc extends ChangeNotifier {
     //Seating List
     _mTmbaModel.getCinemaSeatingPlan(timeslotId, date).then((seatList) {
       seatingList = seatList;
-      seatingList?.forEach((seat) => print(seat.id));
       safeNotifyListeners();
     }).catchError((error) => print(error));
   }
 
   void selectSeat(MovieSeatVO seat) {
-    print(seat.id);
-    print(seat.seatName);
-    MovieSeatVO tempSelectedSeat =
-        seatingList?.firstWhere((seatFromList) => seatFromList.id == seat.id && seatFromList.seatName == seat.seatName) ??
-            MovieSeatVO();
+    MovieSeatVO tempSelectedSeat = seatingList?.firstWhere((seatFromList) =>
+            seatFromList.id == seat.id &&
+            seatFromList.seatName == seat.seatName) ??
+        MovieSeatVO();
 
     List<MovieSeatVO> tempSeatingList =
         seatingList?.map((seat) => seat).toList() ?? [];

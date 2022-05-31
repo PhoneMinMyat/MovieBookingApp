@@ -8,7 +8,6 @@ part 'card_vo.g.dart';
 @JsonSerializable()
 @HiveType(typeId: HIVE_TYPE_ID_CARD_VO, adapterName: 'CardVOAdapter')
 class CardVO {
-
   @JsonKey(name: 'id')
   @HiveField(0)
   int? id;
@@ -29,12 +28,15 @@ class CardVO {
   @HiveField(4)
   String? cardType;
 
+  bool? isSelected;
+
   CardVO({
     this.id,
     this.cardHolder,
     this.cardNumber,
     this.expirationDate,
     this.cardType,
+    this.isSelected,
   });
 
   factory CardVO.fromJson(Map<String, dynamic> json) => _$CardVOFromJson(json);
@@ -49,21 +51,23 @@ class CardVO {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-  
+
     return other is CardVO &&
-      other.id == id &&
-      other.cardHolder == cardHolder &&
-      other.cardNumber == cardNumber &&
-      other.expirationDate == expirationDate &&
-      other.cardType == cardType;
+        other.id == id &&
+        other.cardHolder == cardHolder &&
+        other.cardNumber == cardNumber &&
+        other.expirationDate == expirationDate &&
+        other.cardType == cardType &&
+        other.isSelected == isSelected;
   }
 
   @override
   int get hashCode {
     return id.hashCode ^
-      cardHolder.hashCode ^
-      cardNumber.hashCode ^
-      expirationDate.hashCode ^
-      cardType.hashCode;
+        cardHolder.hashCode ^
+        cardNumber.hashCode ^
+        expirationDate.hashCode ^
+        cardType.hashCode ^
+        isSelected.hashCode;
   }
 }

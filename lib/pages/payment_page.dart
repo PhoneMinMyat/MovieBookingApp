@@ -1,16 +1,17 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:provider/provider.dart';
+
 import 'package:movie_booking_app/bloc/payment_bloc.dart';
+import 'package:movie_booking_app/config/config_values.dart';
+import 'package:movie_booking_app/config/environment_config.dart';
 import 'package:movie_booking_app/data/models/requests/checkout_request.dart';
 import 'package:movie_booking_app/data/models/requests/snack_request.dart';
-import 'package:movie_booking_app/data/models/tmba_model.dart';
-import 'package:movie_booking_app/data/models/tmba_model_impl.dart';
 import 'package:movie_booking_app/data/vos/card_vo.dart';
 import 'package:movie_booking_app/data/vos/checkout_vo.dart';
 import 'package:movie_booking_app/data/vos/profile_vo.dart';
 import 'package:movie_booking_app/data/vos/snack_vo.dart';
-
 import 'package:movie_booking_app/pages/add_new_card_page.dart';
 import 'package:movie_booking_app/pages/ticket_page.dart';
 import 'package:movie_booking_app/resources/color.dart';
@@ -22,7 +23,6 @@ import 'package:movie_booking_app/widget_keys.dart';
 import 'package:movie_booking_app/widgets/floating_long_button.dart';
 import 'package:movie_booking_app/widgets/header_text.dart';
 import 'package:movie_booking_app/widgets/subtitle_text.dart';
-import 'package:provider/provider.dart';
 
 class PaymentPage extends StatefulWidget {
   final String selectdSeatName;
@@ -89,7 +89,6 @@ class _PaymentPageState extends State<PaymentPage> {
 
   void navigateToTicketPage(BuildContext context) {
     paymentBloc?.checkout().then((checkoutInfoRes) {
-      print('CheckoutRes ===> ${checkoutInfoRes?.bookingDate}');
       if (checkoutInfoRes?.bookingNo != null) {
         Navigator.push(
           context,
@@ -107,12 +106,12 @@ class _PaymentPageState extends State<PaymentPage> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (context) => paymentBloc,
-      child: Selector<PaymentBloc, ProfileVO?>(
-        selector: (context, bloc) => bloc.profile,
+      child: Selector<PaymentBloc, List<CardVO>?>(
+        selector: (context, bloc) => bloc.cardList,
         shouldRebuild: (previous, next) => previous != next,
-        builder: (context, profile, child) {
+        builder: (context, cardList, child) {
           PaymentBloc bloc = Provider.of<PaymentBloc>(context, listen: false);
-          print('Payment Bloc ===> ${profile.toString()}');
+
           return Scaffold(
             appBar: const SimpleAppBarView(),
             backgroundColor: Colors.white,
@@ -127,13 +126,23 @@ class _PaymentPageState extends State<PaymentPage> {
                   ),
                 ),
                 const SizedBox(height: MARGIN_MEDIUM_2x),
-                CreditCardList(
-                  (index) {
-                    bloc.changeCard(index);
-                  },
-                  cardList: profile?.cards ?? [],
-                  key: const Key(KEY_CARD_LIST),
-                ),
+                (kCardSectionView[EnvironmentConfig.kConfigCardSectionView] ==
+                        'galaxy')
+                    ? GalaxyCreditCardList(
+                        (index) {
+                          bloc.changeCard(index);
+                        },
+                        cardList: cardList ?? [],
+                        key: const Key(KEY_CARD_LIST),
+                      )
+                    : 
+                    
+                    RubyCardList(
+                        cardList: cardList ?? [],
+                        changeCard: (cardId) {
+                          bloc.onTapCard(cardId);
+                        },
+                      ),
                 const SizedBox(
                   height: MARGIN_XLARGE,
                 ),
@@ -201,10 +210,43 @@ class AddNewCardView extends StatelessWidget {
   }
 }
 
-class CreditCardList extends StatelessWidget {
+class RubyCardList extends StatelessWidget {
+  final List<CardVO> cardList;
+  final Function(int) changeCard;
+  const RubyCardList({
+    Key? key,
+    required this.cardList,
+    required this.changeCard,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    List<CardVO> reversedCardList = cardList.reversed.toList();
+    return SizedBox(
+      height: 180,
+      child: ListView.builder(
+        shrinkWrap: true,
+        padding: const EdgeInsets.only(left: MARGIN_MEDIUM_2x),
+        scrollDirection: Axis.horizontal,
+        itemCount: reversedCardList.length,
+        itemBuilder: (context, index) => GestureDetector(
+          onTap: () {
+            changeCard(reversedCardList[index].id ?? 0);
+          },
+          child: CreditCardItem(
+            card: reversedCardList[index],
+            isRuby: true,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class GalaxyCreditCardList extends StatelessWidget {
   final List<CardVO> cardList;
   final Function(int) cardChange;
-  const CreditCardList(
+  const GalaxyCreditCardList(
     this.cardChange, {
     required this.cardList,
     Key? key,
@@ -213,7 +255,7 @@ class CreditCardList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     List<CardVO> reversedCardList = cardList.reversed.toList();
-    return (reversedCardList.length == 0)
+    return (reversedCardList.isEmpty)
         ? Container()
         : CarouselSlider.builder(
             itemCount: reversedCardList.length,

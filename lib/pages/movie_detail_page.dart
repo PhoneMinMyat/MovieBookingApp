@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:provider/provider.dart';
+
 import 'package:movie_booking_app/bloc/details_bloc.dart';
+import 'package:movie_booking_app/config/config_values.dart';
+import 'package:movie_booking_app/config/environment_config.dart';
 import 'package:movie_booking_app/data/models/the_movie_db_model.dart';
 import 'package:movie_booking_app/data/models/the_movie_db_model_impl.dart';
 import 'package:movie_booking_app/data/vos/actor_vo.dart';
@@ -15,7 +19,6 @@ import 'package:movie_booking_app/widgets/back_button.dart';
 import 'package:movie_booking_app/widgets/floating_long_button.dart';
 import 'package:movie_booking_app/widgets/header_text.dart';
 import 'package:movie_booking_app/widgets/subtitle_text.dart';
-import 'package:provider/provider.dart';
 
 class MovieDetailPage extends StatefulWidget {
   final int movieId;
@@ -155,25 +158,77 @@ class CastSectionView extends StatelessWidget {
         ),
         const SizedBox(height: MARGIN_MEDIUM),
         SizedBox(
-          height: DETAILS_CAST_HEIGHT,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: actorList.length,
-            itemBuilder: (context, index) => Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                image: DecorationImage(
-                    image: NetworkImage(
-                        '$IMAGE_BASE_URL${actorList[index].profilePath}'),
-                    fit: BoxFit.cover),
-              ),
-              width: 75,
-              margin: const EdgeInsets.only(right: MARGIN_MEDIUM_2x),
-            ),
-          ),
+          //height: DETAILS_CAST_HEIGHT,
+          child: (kCastSectionView[EnvironmentConfig.kConfigCastSectionView] ==
+                  'galaxy')
+              ? GalaxyCastSectionView(actorList: actorList)
+              : RubyCastSectionView(actorList: actorList),
         ),
       ],
     );
+  }
+}
+
+class RubyCastSectionView extends StatelessWidget {
+  final List<ActorVO> actorList;
+  const RubyCastSectionView({
+    Key? key,
+    required this.actorList,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: MARGIN_MEDIUM_2x,
+      runSpacing: MARGIN_MEDIUM,
+      children: actorList
+          .map((actor) => CastItemView(profilePath: actor.profilePath ?? '',))
+          .toList(),
+    );
+  }
+}
+
+class GalaxyCastSectionView extends StatelessWidget {
+  const GalaxyCastSectionView({
+    Key? key,
+    required this.actorList,
+  }) : super(key: key);
+
+  final List<ActorVO> actorList;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: DETAILS_CAST_HEIGHT,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: actorList.length,
+        shrinkWrap: true,
+        itemBuilder: (context, index) => CastItemView(profilePath: actorList[index].profilePath ?? ''),
+      ),
+    );
+  }
+}
+
+class CastItemView extends StatelessWidget {
+  final String profilePath;
+  const CastItemView({
+    Key? key,
+    required this.profilePath,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+          margin: const EdgeInsets.only(right: MARGIN_MEDIUM),
+          height: DETAILS_CAST_HEIGHT,
+          width: DETAILS_CAST_HEIGHT,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(DETAILS_CAST_HEIGHT),
+            child:(profilePath.isEmpty)? Image.asset('assets/images/temp_cast_view.png') : Image.network('$IMAGE_BASE_URL$profilePath',
+                fit: BoxFit.cover),
+          ),
+        );
   }
 }
 

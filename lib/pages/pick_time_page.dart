@@ -1,14 +1,8 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:movie_booking_app/bloc/details_bloc.dart';
 import 'package:movie_booking_app/bloc/times_bloc.dart';
-import 'package:movie_booking_app/data/models/tmba_model.dart';
-import 'package:movie_booking_app/data/models/tmba_model_impl.dart';
 import 'package:movie_booking_app/data/vos/cinema_vo.dart';
 import 'package:movie_booking_app/data/vos/date_vo.dart';
 import 'package:movie_booking_app/data/vos/timeslots_vo.dart';
-import 'package:movie_booking_app/network/responses/error_response.dart';
 import 'package:movie_booking_app/pages/seat_page.dart';
 import 'package:movie_booking_app/resources/color.dart';
 import 'package:movie_booking_app/resources/dimens.dart';
@@ -64,8 +58,6 @@ class _PickTimePageState extends State<PickTimePage> {
           ),
         ),
       );
-      print(selectedCinema);
-      print(selectedTimeslot.startTime);
     }
   }
 
@@ -225,11 +217,10 @@ class TimeSlotSectionView extends StatelessWidget {
 
           return GestureDetector(
             onTap: () {
-              print(cinemaIndex);
               timeslotTap(tempTime);
             },
             child: Container(
-              key: Key(cinemaIndex+KEY_TIMESLOT_ITEM+index.toString()),
+              key: Key(cinemaIndex + KEY_TIMESLOT_ITEM + index.toString()),
               width: 50,
               decoration: BoxDecoration(
                 border: Border.all(color: SECONDARY_TEXT_COLOR, width: 1),
@@ -267,7 +258,7 @@ class CustomSliverAppBarView extends StatelessWidget {
   Widget build(BuildContext context) {
     return SliverAppBar(
       backgroundColor: PRIMARY_COLOR,
-      expandedHeight: MediaQuery.of(context).size.height * 0.15,
+      expandedHeight: PICK_DATE_HEIGHT,
       automaticallyImplyLeading: false,
       flexibleSpace: Stack(
         children: [

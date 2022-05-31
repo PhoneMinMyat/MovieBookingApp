@@ -5,7 +5,7 @@ import 'package:movie_booking_app/data/vos/actor_vo.dart';
 import 'package:movie_booking_app/data/vos/movie_vo.dart';
 
 class DetailsBloc extends ChangeNotifier {
-   TheMovieDbModel _mMovieModel = TheMovieDbModelImpl();
+  final TheMovieDbModel _mMovieModel = TheMovieDbModelImpl();
 
   //Variables
   bool isDispose = false;
@@ -16,7 +16,7 @@ class DetailsBloc extends ChangeNotifier {
 
   DetailsBloc(int movieId,[TheMovieDbModel? movieDbModel]) {
     if(movieDbModel != null){
-      _mMovieModel = movieDbModel;
+      // _mMovieModel = movieDbModel;
     }
 
     //Movie

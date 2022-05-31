@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:movie_booking_app/data/models/requests/checkout_request.dart';
 import 'package:movie_booking_app/data/models/tmba_model.dart';
 import 'package:movie_booking_app/data/models/tmba_model_impl.dart';
+import 'package:movie_booking_app/data/vos/card_vo.dart';
 import 'package:movie_booking_app/data/vos/checkout_vo.dart';
 import 'package:movie_booking_app/data/vos/profile_vo.dart';
 
@@ -20,6 +21,7 @@ class PaymentBloc extends ChangeNotifier {
 
   //State Variables
   ProfileVO? profile;
+  List<CardVO>? cardList;
 
   PaymentBloc(CheckOutRequest checkOutReq, [TmbaModel? tmbaModel]) {
     if (tmbaModel != null) {
@@ -30,18 +32,45 @@ class PaymentBloc extends ChangeNotifier {
     _tmbaModel.getProfileFromDatabase().listen((profileFromDB) {
       profile = profileFromDB;
       if (profile?.cards?.isNotEmpty ?? false) {
-        checkOutReq.cardId = profile?.cards?.first.id ?? 0;
+        profile?.makeCardUnselected();
+        profile?.cards?.last.isSelected = true;
+        cardList = profile?.cards;
+        checkOutReq.cardId = cardList?.last.id ?? 0;
         checkOutRequest = checkOutReq;
       }
 
-      notifyListeners();
+      safeNotifyListeners();
     }).onError((error) => print(error));
+  }
+
+  void onTapCard(int cardId) {
+    print('card Id ==== > $cardId');
+    List<CardVO> tempCardList = cardList?.map((card) {
+          CardVO tempCard = card;
+          tempCard.isSelected = false;
+          return tempCard;
+        }).toList() ??
+        [];
+    for (var card in tempCardList) {
+      if (card.id == cardId) {
+        card.isSelected = true;
+        print('card number ==== > ${card.cardNumber}');
+      }
+    }
+
+    cardList = tempCardList;
+    checkOutRequest.cardId = cardId;
+    print('checkOutReq Id ==== > ${checkOutRequest.cardId}');
+    safeNotifyListeners();
   }
 
   void changeCard(int newIndex) {
     selectedCardIndex = newIndex;
+
     checkOutRequest.cardId = profile?.cards?[selectedCardIndex].id ?? 0;
-    print(profile?.cards?[selectedCardIndex].cardNumber);
+
+    print('card id===> ${profile?.cards?[selectedCardIndex].id}');
+    print('card number===> ${profile?.cards?[selectedCardIndex].cardNumber}');
   }
 
   Future<CheckoutVO?> checkout() {

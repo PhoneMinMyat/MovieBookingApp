@@ -1,23 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:provider/provider.dart';
+
 import 'package:movie_booking_app/bloc/home_bloc.dart';
-import 'package:movie_booking_app/data/models/the_movie_db_model.dart';
-import 'package:movie_booking_app/data/models/the_movie_db_model_impl.dart';
-import 'package:movie_booking_app/data/models/tmba_model.dart';
-import 'package:movie_booking_app/data/models/tmba_model_impl.dart';
-import 'package:movie_booking_app/data/vos/genre_vo.dart';
+import 'package:movie_booking_app/config/config_values.dart';
+import 'package:movie_booking_app/config/environment_config.dart';
 import 'package:movie_booking_app/data/vos/movie_vo.dart';
 import 'package:movie_booking_app/data/vos/profile_vo.dart';
 import 'package:movie_booking_app/dummy_data.dart';
 import 'package:movie_booking_app/pages/movie_detail_page.dart';
 import 'package:movie_booking_app/pages/welcome_page.dart';
 import 'package:movie_booking_app/resources/color.dart';
-
 import 'package:movie_booking_app/resources/dimens.dart';
 import 'package:movie_booking_app/resources/string.dart';
 import 'package:movie_booking_app/viewitems/movielist_items.dart';
 import 'package:movie_booking_app/widgets/title_text.dart';
-import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -92,27 +89,39 @@ class _HomePageState extends State<HomePage> {
                 Selector<HomeBloc, List<MovieVO>?>(
                   selector: (context, bloc) => bloc.nowPlayingMovieList,
                   builder: (context, nowPlayingMovieList, child) =>
-                      HorizontalMovieListView(
-                    (movieId) {
-                      navigationToMovieDetailPage(context, movieId);
-                    },
-                    headerText: HOMEPAGE_NOW_SHOWING_TEXT,
-                    movieList: nowPlayingMovieList ?? [],
-                  ),
-                ),
-                const SizedBox(
-                  height: MARGIN_MEDIUM_3x,
-                ),
-                Selector<HomeBloc, List<MovieVO>?>(
-                  selector: (context, bloc) => bloc.upcomingMovieList,
-                  builder: (context, upcomingMovieList, child) =>
-                      HorizontalMovieListView(
-                    (movieId) {
-                      navigationToMovieDetailPage(context, movieId);
-                    },
-                    headerText: HOMEPAGE_COMING_SOON_TEXT,
-                    movieList: upcomingMovieList ?? [],
-                  ),
+                      Selector<HomeBloc, List<MovieVO>?>(
+                          selector: (context, bloc) => bloc.upcomingMovieList,
+                          builder: (context, upcomingMovieList, child) =>
+                              Selector<HomeBloc, List<MovieVO>?>(
+                                selector: (context, bloc) =>
+                                    bloc.selectedMovieList,
+                                builder: (context, selectedMovieList, child) =>
+                                    (kMovieSectionView[EnvironmentConfig
+                                                .kConfigMovieSectionView] ==
+                                            'galaxy')
+                                        ? GalaxyMovieSectionView(
+                                            onTapMovie: (movieId) {
+                                              navigationToMovieDetailPage(
+                                                  context, movieId);
+                                            },
+                                            nowShowingMovieList:
+                                                nowPlayingMovieList ?? [],
+                                            comingSoonMovieList:
+                                                upcomingMovieList ?? [])
+                                        : RubyMovieSectionView(
+                                            movieList: selectedMovieList ?? [],
+                                            onTapTabBar: (index) {
+                                              HomeBloc bloc =
+                                                  Provider.of<HomeBloc>(context,
+                                                      listen: false);
+                                              bloc.onTapTabBar(index);
+                                            },
+                                            onTapMovie: (movieId) {
+                                              navigationToMovieDetailPage(
+                                                  context, movieId);
+                                            },
+                                          ),
+                              )),
                 ),
                 const SizedBox(
                   height: MARGIN_MEDIUM_3x,
@@ -122,6 +131,106 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class RubyMovieSectionView extends StatelessWidget {
+  final List<MovieVO> movieList;
+  final Function(int) onTapMovie;
+  final Function(int) onTapTabBar;
+  const RubyMovieSectionView({
+    Key? key,
+    required this.movieList,
+    required this.onTapMovie,
+    required this.onTapTabBar,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        DefaultTabController(
+          length: 2,
+          initialIndex: 0,
+          child: TabBar(
+              onTap: (value) {
+                onTapTabBar(value);
+              },
+              labelColor: Colors.black,
+              labelStyle: const TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+              indicatorColor: PRIMARY_COLOR,
+              tabs: const [
+                Tab(
+                  text: 'Now Playing',
+                ),
+                Tab(
+                  text: 'Coming Soon',
+                )
+              ]),
+        ),
+        const SizedBox(
+          height: MARGIN_MEDIUM_2x,
+        ),
+        GridView.builder(
+            shrinkWrap: true,
+            physics: const ScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: MARGIN_MEDIUM_2x),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                mainAxisSpacing: MARGIN_MEDIUM,
+                crossAxisSpacing: MARGIN_MEDIUM_2x,
+                crossAxisCount: 2,
+                childAspectRatio: 1 / 1.8),
+            itemCount: movieList.length,
+            itemBuilder: (context, index) {
+              return HorizontalMovieListItem(
+                movie: movieList[index],
+                onTapMovie: (movieId) {
+                  onTapMovie(movieId);
+                },
+              );
+            })
+      ],
+    );
+  }
+}
+
+class GalaxyMovieSectionView extends StatelessWidget {
+  final Function(int?) onTapMovie;
+  final List<MovieVO> nowShowingMovieList;
+  final List<MovieVO> comingSoonMovieList;
+  const GalaxyMovieSectionView({
+    Key? key,
+    required this.onTapMovie,
+    required this.nowShowingMovieList,
+    required this.comingSoonMovieList,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        HorizontalMovieListView(
+          (movieId) {
+            onTapMovie(movieId);
+          },
+          headerText: HOMEPAGE_NOW_SHOWING_TEXT,
+          movieList: nowShowingMovieList,
+        ),
+        const SizedBox(
+          height: MARGIN_MEDIUM_3x,
+        ),
+        HorizontalMovieListView(
+          (movieId) {
+            onTapMovie(movieId);
+          },
+          headerText: HOMEPAGE_COMING_SOON_TEXT,
+          movieList: comingSoonMovieList,
+        ),
+      ],
     );
   }
 }
@@ -297,17 +406,22 @@ class HorizontalMovieListView extends StatelessWidget {
         ),
         SizedBox(
           height: HORIZONTAL_MOVIE_LIST_HEIGHT,
-          child: ListView.builder(
-              padding: const EdgeInsets.only(left: MARGIN_MEDIUM_2x),
-              scrollDirection: Axis.horizontal,
-              itemCount: movieList.length,
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                    onTap: () => onTap(movieList[index].id),
-                    child: HorizontalMovieListItem(
-                      movie: movieList[index],
-                    ));
-              }),
+          child: ListView.separated(
+            padding: const EdgeInsets.only(left: MARGIN_MEDIUM_2x),
+            scrollDirection: Axis.horizontal,
+            itemCount: movieList.length,
+            itemBuilder: (context, index) {
+              return HorizontalMovieListItem(
+                onTapMovie: (movieId) {
+                  onTap(movieId);
+                },
+                movie: movieList[index],
+              );
+            },
+            separatorBuilder: (context, index) => const SizedBox(
+              width: MARGIN_MEDIUM,
+            ),
+          ),
         ),
       ],
     );

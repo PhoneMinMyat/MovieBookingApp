@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:movie_booking_app/data/vos/actor_list_vo.dart';
 import 'package:movie_booking_app/data/vos/actor_vo.dart';
 import 'package:movie_booking_app/persistence/daos/actor_dao.dart';
 import 'package:movie_booking_app/persistence/hive_constants.dart';
@@ -13,20 +14,16 @@ class ActorDaoImpl extends ActorDao {
   ActorDaoImpl._internal();
 
   @override
-  void saveAllActors(List<ActorVO> actorList) async {
-    Map<int, ActorVO> actorMap = Map.fromIterable(actorList,
-        key: (actor) => actor.id, value: (actor) => actor);
-    await getActorBox().putAll(actorMap);
+  void saveAllActors(List<ActorVO> actorList, int movieId) async {
+    ActorListVO tempActorList = ActorListVO(actorList: actorList);
+    getActorBox().put(movieId, tempActorList);
   }
 
   @override
-  List<ActorVO> getAllActors() {
-    List<ActorVO> actorList = getActorBox().values.toList();
-    if (actorList.isNotEmpty) {
-      return actorList;
-    } else {
-      return [];
-    }
+  List<ActorVO> getActorsByMovieId(int movieId) {
+    ActorListVO tempActorList =
+        getActorBox().get(movieId) ?? ActorListVO(actorList: []);
+    return tempActorList.actorList ?? [];
   }
 
   //Reactive
@@ -36,12 +33,11 @@ class ActorDaoImpl extends ActorDao {
   }
 
   @override
-  Stream<List<ActorVO>> getActorsStream() {
-    return Stream.value(getAllActors());
+  Stream<List<ActorVO>> getActorsByMovieIdStream(int movieId) {
+    return Stream.value(getActorsByMovieId(movieId));
   }
 
-
-  Box<ActorVO> getActorBox() {
-    return Hive.box<ActorVO>(BOX_NAME_ACTOR_VO);
+  Box<ActorListVO> getActorBox() {
+    return Hive.box<ActorListVO>(BOX_NAME_ACTOR_LIST_VO);
   }
 }

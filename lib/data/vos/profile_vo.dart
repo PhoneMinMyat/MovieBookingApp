@@ -56,6 +56,12 @@ class ProfileVO {
 
   Map<String, dynamic> toJson() => _$ProfileVOToJson(this);
 
+  void makeCardUnselected() {
+    cards?.forEach((element) {
+      element.isSelected = false;
+    });
+  }
+
   @override
   String toString() {
     return 'ProfileVO(id: $id, name: $name, email: $email, phone: $phone, totalExpense: $totalExpense, profileImage: $profileImage, token: $token, cards: $cards)';
@@ -64,27 +70,27 @@ class ProfileVO {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-  
+
     return other is ProfileVO &&
-      other.id == id &&
-      other.name == name &&
-      other.email == email &&
-      other.phone == phone &&
-      other.totalExpense == totalExpense &&
-      other.profileImage == profileImage &&
-      other.token == token &&
-      listEquals(other.cards, cards);
+        other.id == id &&
+        other.name == name &&
+        other.email == email &&
+        other.phone == phone &&
+        other.totalExpense == totalExpense &&
+        other.profileImage == profileImage &&
+        other.token == token &&
+        listEquals(other.cards, cards);
   }
 
   @override
   int get hashCode {
     return id.hashCode ^
-      name.hashCode ^
-      email.hashCode ^
-      phone.hashCode ^
-      totalExpense.hashCode ^
-      profileImage.hashCode ^
-      token.hashCode ^
-      cards.hashCode;
+        name.hashCode ^
+        email.hashCode ^
+        phone.hashCode ^
+        totalExpense.hashCode ^
+        profileImage.hashCode ^
+        token.hashCode ^
+        cards.hashCode;
   }
 }

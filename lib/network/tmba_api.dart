@@ -71,7 +71,7 @@ abstract class TmbaApi {
 
   @GET(ENDPOINTS_GET_PAYMENT_METHOD)
   Future<GetPaymentMethodResponse> getPaymentMethodList(
-@Header(PARAM_AUTHORIZATION) String token,
+    @Header(PARAM_AUTHORIZATION) String token,
   );
 
   @GET(ENDPOINTS_GET_PROFILE)
@@ -94,5 +94,4 @@ abstract class TmbaApi {
     @Header(PARAM_AUTHORIZATION) String token,
     @Body() CheckOutRequest checkOutRequest,
   );
-
 }

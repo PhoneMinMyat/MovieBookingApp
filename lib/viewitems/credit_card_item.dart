@@ -7,8 +7,10 @@ import 'package:movie_booking_app/resources/string.dart';
 
 class CreditCardItem extends StatelessWidget {
   final CardVO card;
+  final bool isRuby;
   const CreditCardItem({
     required this.card,
+    this.isRuby = false,
     Key? key,
   }) : super(key: key);
 
@@ -17,13 +19,20 @@ class CreditCardItem extends StatelessWidget {
     return Card(
       elevation: 5,
       shape: RoundedRectangleBorder(
+        side: (isRuby)
+            ? (card.isSelected ?? false)
+                ? const BorderSide(color: Colors.yellow, width: 5)
+                : BorderSide.none
+            : BorderSide.none,
         borderRadius: BorderRadius.circular(BUTTON_BORDER_RADIUS),
       ),
       child: Container(
+        width: 300,
         padding: const EdgeInsets.symmetric(
             vertical: MARGIN_MEDIUM_2x, horizontal: MARGIN_MEDIUM_3x),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(BUTTON_BORDER_RADIUS),
+          // border: Border.all(color: Colors.yellow, width: 5),
           gradient: LinearGradient(
               colors: [PRIMARY_COLOR, PRIMARY_COLOR.withOpacity(0.8)],
               begin: Alignment.topLeft,
